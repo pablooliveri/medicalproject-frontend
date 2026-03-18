@@ -106,7 +106,10 @@ export const settingsAPI = {
   uploadLogo: (formData) => api.post('/settings/logo', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  removeLogo: () => api.delete('/settings/logo')
+  removeLogo: () => api.delete('/settings/logo'),
+  addBranch: (name) => api.post('/settings/branches', { name }),
+  updateBranch: (oldName, newName) => api.put('/settings/branches', { oldName, newName }),
+  deleteBranch: (name) => api.delete(`/settings/branches/${encodeURIComponent(name)}`)
 };
 
 // Reports

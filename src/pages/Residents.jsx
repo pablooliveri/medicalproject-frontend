@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { residentsAPI } from '../services/api';
+import { residentsAPI, settingsAPI } from '../services/api';
 import { toast } from 'react-toastify';
 import Modal from '../components/common/Modal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
@@ -9,13 +9,12 @@ import { FiPlus, FiEdit, FiTrash2, FiEye, FiSearch, FiUser, FiCheckCircle } from
 import Pagination from '../components/common/Pagination';
 import usePagination from '../hooks/usePagination';
 
-const SUCURSALES = ['Casa 1', 'Casa 2', 'Casa 3'];
-
 const Residents = () => {
   const { t, i18n } = useTranslation();
   const isEs = i18n.language === 'es';
   const navigate = useNavigate();
   const [residents, setResidents] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [sucursalFilter, setSucursalFilter] = useState('');
@@ -24,8 +23,16 @@ const Residents = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showActivateConfirm, setShowActivateConfirm] = useState(false);
   const [selectedResident, setSelectedResident] = useState(null);
-  const [form, setForm] = useState({ firstName: '', lastName: '', cedula: '', admissionDate: '', notes: '', sucursal: 'Casa 1' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', cedula: '', admissionDate: '', notes: '', sucursal: '' });
   const { paginatedData: paginatedResidents, currentPage, rowsPerPage, totalItems, handlePageChange, handleRowsPerPageChange } = usePagination(residents);
+
+  useEffect(() => {
+    settingsAPI.get().then(res => {
+      const b = res.data.branches || ['Casa 1', 'Casa 2', 'Casa 3'];
+      setBranches(b);
+      setForm(f => ({ ...f, sucursal: f.sucursal || b[0] || '' }));
+    }).catch(console.error);
+  }, []);
 
   useEffect(() => {
     fetchResidents();
@@ -48,7 +55,7 @@ const Residents = () => {
 
   const openAdd = () => {
     setSelectedResident(null);
-    setForm({ firstName: '', lastName: '', cedula: '', admissionDate: '', notes: '', sucursal: 'Casa 1' });
+    setForm({ firstName: '', lastName: '', cedula: '', admissionDate: '', notes: '', sucursal: branches[0] || '' });
     setShowModal(true);
   };
 
@@ -60,7 +67,7 @@ const Residents = () => {
       cedula: resident.cedula,
       admissionDate: resident.admissionDate ? resident.admissionDate.split('T')[0] : '',
       notes: resident.notes || '',
-      sucursal: resident.sucursal || 'Casa 1'
+      sucursal: resident.sucursal || branches[0] || ''
     });
     setShowModal(true);
   };
@@ -137,7 +144,7 @@ const Residents = () => {
           onChange={(e) => setSucursalFilter(e.target.value)}
         >
           <option value="">{isEs ? 'Todas las Sucursales' : 'All Branches'}</option>
-          {SUCURSALES.map(s => (
+          {branches.map(s => (
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
@@ -185,7 +192,7 @@ const Residents = () => {
                       <td>{r.cedula}</td>
                       <td>
                         <span className="badge badge-info" style={{ background: '#6c757d', color: '#fff' }}>
-                          {r.sucursal || 'Casa 1'}
+                          {r.sucursal || branches[0] || '-'}
                         </span>
                       </td>
                       <td>{new Date(r.admissionDate).toLocaleDateString()}</td>
@@ -269,7 +276,7 @@ const Residents = () => {
                 value={form.sucursal}
                 onChange={(e) => setForm({...form, sucursal: e.target.value})}
               >
-                {SUCURSALES.map(s => (
+                {branches.map(s => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>

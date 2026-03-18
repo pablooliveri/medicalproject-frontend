@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { residentsAPI, deliveriesAPI, reportsAPI } from '../services/api';
+import { residentsAPI, deliveriesAPI, reportsAPI, settingsAPI } from '../services/api';
 import { toast } from 'react-toastify';
 import { FiFileText, FiDownload, FiUser, FiTruck } from 'react-icons/fi';
-
-const SUCURSALES = ['Casa 1', 'Casa 2', 'Casa 3'];
 
 const Reports = () => {
   const { t, i18n } = useTranslation();
   const isEs = i18n.language === 'es';
   const [allResidents, setAllResidents] = useState([]);
   const [filteredResidents, setFilteredResidents] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [deliveries, setDeliveries] = useState([]);
   const [sucursalFilter, setSucursalFilter] = useState('');
   const [selectedResidentDelivery, setSelectedResidentDelivery] = useState('');
@@ -21,6 +20,9 @@ const Reports = () => {
     residentsAPI.getAll().then(res => {
       setAllResidents(res.data);
       setFilteredResidents(res.data);
+    }).catch(console.error);
+    settingsAPI.get().then(res => {
+      setBranches(res.data.branches || ['Casa 1', 'Casa 2', 'Casa 3']);
     }).catch(console.error);
   }, []);
 
@@ -89,7 +91,7 @@ const Reports = () => {
               onChange={(e) => setSucursalFilter(e.target.value)}
             >
               <option value="">{isEs ? 'Todas las Sucursales' : 'All Branches'}</option>
-              {SUCURSALES.map(s => (
+              {branches.map(s => (
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>

@@ -2,18 +2,23 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { settingsAPI } from '../services/api';
 import { toast } from 'react-toastify';
-import { FiSave, FiUpload, FiTrash2, FiImage } from 'react-icons/fi';
+import { FiSave, FiUpload, FiTrash2, FiImage, FiPlus, FiEdit, FiMapPin } from 'react-icons/fi';
 
 const API_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://medicalproject-backend-production.up.railway.app';
 
 const Settings = () => {
   const { t, i18n } = useTranslation();
+  const isEs = i18n.language === 'es';
   const [settings, setSettings] = useState({
     companyName: '', address: '', phone: '', email: '', lowStockThresholdDays: 5, language: 'en'
   });
   const [logo, setLogo] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [branches, setBranches] = useState([]);
+  const [newBranch, setNewBranch] = useState('');
+  const [editingBranch, setEditingBranch] = useState(null);
+  const [editBranchName, setEditBranchName] = useState('');
 
   useEffect(() => { fetchSettings(); }, []);
 
@@ -28,6 +33,7 @@ const Settings = () => {
         lowStockThresholdDays: data.lowStockThresholdDays || 5,
         language: data.language || 'en'
       });
+      setBranches(data.branches || ['Casa 1', 'Casa 2', 'Casa 3']);
       if (data.logo) setLogoPreview(`${API_URL}${data.logo}`);
     } catch (error) {
       console.error('Error:', error);
@@ -73,6 +79,44 @@ const Settings = () => {
       toast.success(t('settings.logoRemoved'));
     } catch (error) {
       toast.error(t('app.error'));
+    }
+  };
+
+  const handleAddBranch = async () => {
+    if (!newBranch.trim()) return;
+    try {
+      const { data } = await settingsAPI.addBranch(newBranch.trim());
+      setBranches(data.branches);
+      setNewBranch('');
+      toast.success(isEs ? 'Sucursal agregada' : 'Branch added');
+    } catch (error) {
+      toast.error(error.response?.data?.message || t('app.error'));
+    }
+  };
+
+  const handleUpdateBranch = async (oldName) => {
+    if (!editBranchName.trim() || editBranchName.trim() === oldName) {
+      setEditingBranch(null);
+      return;
+    }
+    try {
+      const { data } = await settingsAPI.updateBranch(oldName, editBranchName.trim());
+      setBranches(data.branches);
+      setEditingBranch(null);
+      toast.success(isEs ? 'Sucursal actualizada' : 'Branch updated');
+    } catch (error) {
+      toast.error(error.response?.data?.message || t('app.error'));
+    }
+  };
+
+  const handleDeleteBranch = async (name) => {
+    if (!window.confirm(isEs ? `¿Eliminar sucursal "${name}"?` : `Delete branch "${name}"?`)) return;
+    try {
+      const { data } = await settingsAPI.deleteBranch(name);
+      setBranches(data.branches);
+      toast.success(isEs ? 'Sucursal eliminada' : 'Branch deleted');
+    } catch (error) {
+      toast.error(error.response?.data?.message || t('app.error'));
     }
   };
 
@@ -141,6 +185,67 @@ const Settings = () => {
             <label className="form-label">{t('settings.lowStockThreshold')}</label>
             <input type="number" className="form-control" style={{ maxWidth: 200 }} value={settings.lowStockThresholdDays} onChange={(e) => setSettings({...settings, lowStockThresholdDays: Number(e.target.value)})} min="1" />
           </div>
+        </div>
+      </div>
+
+      {/* Branches */}
+      <div className="card" style={{ marginBottom: 24 }}>
+        <div className="card-header"><h3 className="card-title"><FiMapPin style={{ marginRight: 8 }} /> {isEs ? 'Sucursales' : 'Branches'}</h3></div>
+        <div className="card-body">
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            <input
+              className="form-control"
+              placeholder={isEs ? 'Nombre de nueva sucursal' : 'New branch name'}
+              value={newBranch}
+              onChange={(e) => setNewBranch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddBranch()}
+              style={{ maxWidth: 300 }}
+            />
+            <button className="btn btn-primary btn-sm" onClick={handleAddBranch} disabled={!newBranch.trim()}>
+              <FiPlus /> {isEs ? 'Agregar' : 'Add'}
+            </button>
+          </div>
+          {branches.length === 0 ? (
+            <p style={{ color: 'var(--text-secondary)' }}>{isEs ? 'No hay sucursales' : 'No branches'}</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {branches.map((branch, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--bg-secondary)', borderRadius: 8 }}>
+                  {editingBranch === branch ? (
+                    <>
+                      <input
+                        className="form-control"
+                        value={editBranchName}
+                        onChange={(e) => setEditBranchName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleUpdateBranch(branch);
+                          if (e.key === 'Escape') setEditingBranch(null);
+                        }}
+                        style={{ flex: 1 }}
+                        autoFocus
+                      />
+                      <button className="btn btn-primary btn-sm" onClick={() => handleUpdateBranch(branch)}>
+                        <FiSave />
+                      </button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => setEditingBranch(null)}>
+                        {isEs ? 'Cancelar' : 'Cancel'}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ flex: 1, fontWeight: 500 }}>{branch}</span>
+                      <button className="btn btn-sm btn-secondary" onClick={() => { setEditingBranch(branch); setEditBranchName(branch); }}>
+                        <FiEdit />
+                      </button>
+                      <button className="btn btn-sm btn-danger" onClick={() => handleDeleteBranch(branch)}>
+                        <FiTrash2 />
+                      </button>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
