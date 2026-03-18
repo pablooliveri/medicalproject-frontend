@@ -213,7 +213,12 @@
     "totalItems": "Total de Artículos",
     "currentStock": "Stock Actual",
     "newStock": "Nuevo Stock",
-    "coverageDate": "Cubre Hasta"
+    "coverageDate": "Cubre Hasta",
+    "editDelivery": "Editar Entrega",
+    "updated": "Entrega actualizada exitosamente",
+    "deleted": "Entrega eliminada exitosamente",
+    "currentPhotos": "Fotos Actuales",
+    "addPhotos": "Agregar Fotos"
   },
   "stock": {
     "title": "Gestión de Stock",
@@ -267,7 +272,11 @@
     "selectResident": "Seleccione Residente",
     "selectDelivery": "Seleccione Entrega",
     "downloadPDF": "Descargar PDF",
-    "filterBySucursal": "Filtrar por Sucursal"
+    "filterBySucursal": "Filtrar por Sucursal",
+    "allResidentsReport": "Reporte de Todos los Residentes",
+    "allResidentsDescription": "Genera un PDF con la medicación de todos los residentes, cada uno en su propia página.",
+    "downloadAllPDF": "Descargar PDF de Todos",
+    "generating": "Generando..."
   },
   "settings": {
     "title": "Configuración",

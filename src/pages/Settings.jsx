@@ -33,7 +33,7 @@ const Settings = () => {
         lowStockThresholdDays: data.lowStockThresholdDays || 5,
         language: data.language || 'en'
       });
-      setBranches(data.branches || ['Casa 1', 'Casa 2', 'Casa 3']);
+      setBranches(data.branches || []);
       if (data.logo) setLogoPreview(`${API_URL}${data.logo}`);
     } catch (error) {
       console.error('Error:', error);

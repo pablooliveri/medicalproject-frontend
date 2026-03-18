@@ -31,7 +31,7 @@ const Residents = () => {
 
   useEffect(() => {
     settingsAPI.get().then(res => {
-      const b = res.data.branches || ['Casa 1', 'Casa 2', 'Casa 3'];
+      const b = res.data.branches || [];
       setBranches(b);
       setForm(f => ({ ...f, sucursal: f.sucursal || b[0] || '' }));
     }).catch(console.error);

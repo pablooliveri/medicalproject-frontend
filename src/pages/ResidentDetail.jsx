@@ -292,7 +292,7 @@ const ResidentDetail = () => {
           <div className="form-row">
             <div><strong>{t('residents.cedula')}:</strong> {resident.cedula}</div>
             <div><strong>{t('residents.admissionDate')}:</strong> {new Date(resident.admissionDate).toLocaleDateString()}</div>
-            <div><strong>{isEs ? 'Sucursal' : 'Branch'}:</strong> {resident.sucursal || 'Casa 1'}</div>
+            <div><strong>{isEs ? 'Sucursal' : 'Branch'}:</strong> {resident.sucursal || '-'}</div>
             <div><strong>{t('app.status')}:</strong> <span className={`badge ${resident.isActive ? 'badge-success' : 'badge-danger'}`}>{resident.isActive ? t('app.active') : t('app.inactive')}</span></div>
           </div>
           {resident.notes && <div style={{ marginTop: 12 }}><strong>{t('app.notes')}:</strong> {resident.notes}</div>}

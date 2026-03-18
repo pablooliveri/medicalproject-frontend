@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { residentsAPI, deliveriesAPI, reportsAPI, settingsAPI } from '../services/api';
 import { toast } from 'react-toastify';
-import { FiFileText, FiDownload, FiUser, FiTruck } from 'react-icons/fi';
+import { FiFileText, FiDownload, FiUser, FiTruck, FiUsers } from 'react-icons/fi';
 
 const Reports = () => {
   const { t, i18n } = useTranslation();
@@ -15,6 +15,7 @@ const Reports = () => {
   const [selectedResidentDelivery, setSelectedResidentDelivery] = useState('');
   const [selectedDelivery, setSelectedDelivery] = useState('');
   const [selectedResidentReport, setSelectedResidentReport] = useState('');
+  const [generatingAll, setGeneratingAll] = useState(false);
 
   useEffect(() => {
     residentsAPI.getAll().then(res => {
@@ -22,7 +23,7 @@ const Reports = () => {
       setFilteredResidents(res.data);
     }).catch(console.error);
     settingsAPI.get().then(res => {
-      setBranches(res.data.branches || ['Casa 1', 'Casa 2', 'Casa 3']);
+      setBranches(res.data.branches || []);
     }).catch(console.error);
   }, []);
 
@@ -71,6 +72,32 @@ const Reports = () => {
     }
   };
 
+  const generateAllResidentsPDF = async () => {
+    setGeneratingAll(true);
+    try {
+      const params = {};
+      if (sucursalFilter) params.sucursal = sucursalFilter;
+      const response = await reportsAPI.allResidentsReport(params);
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      window.open(window.URL.createObjectURL(blob), '_blank');
+    } catch (error) {
+      // Blob responses need special handling to read the JSON error
+      if (error.response?.data instanceof Blob) {
+        try {
+          const text = await error.response.data.text();
+          const json = JSON.parse(text);
+          toast.error(json.message || t('app.error'));
+        } catch {
+          toast.error(t('app.error'));
+        }
+      } else {
+        toast.error(error.response?.data?.message || t('app.error'));
+      }
+    } finally {
+      setGeneratingAll(false);
+    }
+  };
+
   return (
     <div>
       <div className="page-header">
@@ -96,6 +123,24 @@ const Reports = () => {
               ))}
             </select>
           </div>
+        </div>
+      </div>
+
+      {/* All Residents Report */}
+      <div className="card" style={{ marginBottom: 24 }}>
+        <div className="card-header">
+          <h3 className="card-title"><FiUsers style={{ marginRight: 8 }} /> {t('reports.allResidentsReport')}</h3>
+        </div>
+        <div className="card-body">
+          <p style={{ color: '#666', marginBottom: 16, fontSize: 14 }}>
+            {t('reports.allResidentsDescription')}
+            {sucursalFilter && (
+              <strong> ({sucursalFilter})</strong>
+            )}
+          </p>
+          <button className="btn btn-primary" onClick={generateAllResidentsPDF} disabled={generatingAll}>
+            <FiDownload /> {generatingAll ? t('reports.generating') : t('reports.downloadAllPDF')}
+          </button>
         </div>
       </div>
 

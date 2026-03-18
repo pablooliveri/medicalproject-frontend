@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { deliveriesAPI, residentsAPI, reportsAPI } from '../services/api';
 import { toast } from 'react-toastify';
-import { FiPlus, FiEye, FiFileText, FiTruck, FiSearch } from 'react-icons/fi';
+import { FiPlus, FiEye, FiFileText, FiTruck, FiSearch, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import Pagination from '../components/common/Pagination';
 import SortableHeader from '../components/common/SortableHeader';
 import usePagination from '../hooks/usePagination';
@@ -43,6 +43,17 @@ const Deliveries = () => {
       window.open(window.URL.createObjectURL(blob), '_blank');
     } catch (error) {
       toast.error(t('app.error'));
+    }
+  };
+
+  const handleDelete = async (deliveryId) => {
+    if (!window.confirm(t('app.confirmDelete'))) return;
+    try {
+      await deliveriesAPI.delete(deliveryId);
+      toast.success(t('deliveries.deleted'));
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || t('app.error'));
     }
   };
 
@@ -89,8 +100,10 @@ const Deliveries = () => {
                       <td>{d.items?.length || 0}</td>
                       <td>
                         <div style={{ display: 'flex', gap: 4 }}>
-                          <button className="btn btn-sm btn-secondary" onClick={() => navigate(`/deliveries/${d._id}`)}><FiEye /></button>
-                          <button className="btn btn-sm btn-secondary" onClick={() => generatePDF(d._id)}><FiFileText /></button>
+                          <button className="btn btn-sm btn-secondary" onClick={() => navigate(`/deliveries/${d._id}`)} title={t('app.view')}><FiEye /></button>
+                          <button className="btn btn-sm btn-secondary" onClick={() => generatePDF(d._id)} title={t('deliveries.generatePDF')}><FiFileText /></button>
+                          <button className="btn btn-sm btn-secondary" onClick={() => navigate(`/deliveries/${d._id}/edit`)} title={t('app.edit')}><FiEdit2 /></button>
+                          <button className="btn btn-sm btn-danger" onClick={() => handleDelete(d._id)} title={t('app.delete')}><FiTrash2 /></button>
                         </div>
                       </td>
                     </tr>

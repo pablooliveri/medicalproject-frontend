@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { deliveriesAPI, reportsAPI } from '../services/api';
 import { toast } from 'react-toastify';
-import { FiArrowLeft, FiFileText, FiImage } from 'react-icons/fi';
+import { FiArrowLeft, FiFileText, FiImage, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import SortableHeader from '../components/common/SortableHeader';
 import useSortableTable from '../hooks/useSortableTable';
 
@@ -12,6 +12,7 @@ const API_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://me
 const DeliveryDetail = () => {
   const { t } = useTranslation();
   const { id } = useParams();
+  const navigate = useNavigate();
   const [delivery, setDelivery] = useState(null);
   const [loading, setLoading] = useState(true);
   const { sortedData: sortedItems, sortConfig, requestSort } = useSortableTable(delivery?.items || []);
@@ -33,6 +34,17 @@ const DeliveryDetail = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm(t('app.confirmDelete'))) return;
+    try {
+      await deliveriesAPI.delete(id);
+      toast.success(t('deliveries.deleted'));
+      navigate('/deliveries');
+    } catch (error) {
+      toast.error(error.response?.data?.message || t('app.error'));
+    }
+  };
+
   if (loading) return <div className="loading-screen">{t('app.loading')}</div>;
   if (!delivery) return <div className="empty-state"><h3>{t('app.error')}</h3></div>;
 
@@ -43,7 +55,11 @@ const DeliveryDetail = () => {
           <Link to="/deliveries" className="btn btn-secondary btn-sm"><FiArrowLeft /></Link>
           <h1>{t('deliveries.deliveryDetails')}</h1>
         </div>
-        <button className="btn btn-primary" onClick={generatePDF}><FiFileText /> {t('deliveries.generatePDF')}</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-primary" onClick={generatePDF}><FiFileText /> {t('deliveries.generatePDF')}</button>
+          <Link to={`/deliveries/${id}/edit`} className="btn btn-secondary"><FiEdit2 /> {t('app.edit')}</Link>
+          <button className="btn btn-danger" onClick={handleDelete}><FiTrash2 /> {t('app.delete')}</button>
+        </div>
       </div>
 
       {/* Info */}

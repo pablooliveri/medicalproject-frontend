@@ -78,6 +78,10 @@ export const deliveriesAPI = {
   create: (data) => api.post('/deliveries', data, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
+  update: (id, data) => api.put(`/deliveries/${id}`, data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  delete: (id) => api.delete(`/deliveries/${id}`),
   getHistory: (params) => api.get('/deliveries/history', { params })
 };
 
@@ -115,7 +119,8 @@ export const settingsAPI = {
 // Reports
 export const reportsAPI = {
   deliveryReport: (id) => api.get(`/reports/delivery/${id}`, { responseType: 'blob' }),
-  residentReport: (id, params = {}) => api.get(`/reports/resident/${id}`, { responseType: 'blob', params })
+  residentReport: (id, params = {}) => api.get(`/reports/resident/${id}`, { responseType: 'blob', params }),
+  allResidentsReport: (params = {}) => api.get('/reports/all-residents', { responseType: 'blob', params })
 };
 
 export default api;

@@ -13,6 +13,7 @@ import Medications from './pages/Medications';
 import Deliveries from './pages/Deliveries';
 import DeliveryDetail from './pages/DeliveryDetail';
 import NewDelivery from './pages/NewDelivery';
+import EditDelivery from './pages/EditDelivery';
 import StockManagement from './pages/StockManagement';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
@@ -76,6 +77,13 @@ const AppRoutes = () => {
         <ProtectedRoute>
           <Layout>
             <DeliveryDetail />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/deliveries/:id/edit" element={
+        <ProtectedRoute>
+          <Layout>
+            <EditDelivery />
           </Layout>
         </ProtectedRoute>
       } />

@@ -213,7 +213,12 @@
     "totalItems": "Total Items",
     "currentStock": "Current Stock",
     "newStock": "New Stock",
-    "coverageDate": "Coverage Until"
+    "coverageDate": "Coverage Until",
+    "editDelivery": "Edit Delivery",
+    "updated": "Delivery updated successfully",
+    "deleted": "Delivery deleted successfully",
+    "currentPhotos": "Current Photos",
+    "addPhotos": "Add Photos"
   },
   "stock": {
     "title": "Stock Management",
@@ -267,7 +272,11 @@
     "selectResident": "Select Resident",
     "selectDelivery": "Select Delivery",
     "downloadPDF": "Download PDF",
-    "filterBySucursal": "Filter by Branch"
+    "filterBySucursal": "Filter by Branch",
+    "allResidentsReport": "All Residents Report",
+    "allResidentsDescription": "Generate a PDF with medication schedules for all residents, each on their own page.",
+    "downloadAllPDF": "Download All PDF",
+    "generating": "Generating..."
   },
   "settings": {
     "title": "Settings",
