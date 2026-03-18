@@ -367,7 +367,7 @@ const ResidentDetail = () => {
                         return (
                           <tr key={med._id}>
                             <td style={{ fontWeight: 500 }}>
-                              {(med.medication?.genericName || 'N/A').toUpperCase()} {med.dosageMg} {med.medication?.dosageUnit}
+                              {(med.medication?.genericName || 'N/A').toUpperCase()}
                               {med.medication?.commercialName && (
                                 <span style={{ color: '#888', fontSize: 12, marginLeft: 4 }}>({med.medication.commercialName})</span>
                               )}
