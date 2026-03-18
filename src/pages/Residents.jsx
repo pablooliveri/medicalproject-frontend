@@ -7,7 +7,9 @@ import Modal from '../components/common/Modal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { FiPlus, FiEdit, FiTrash2, FiEye, FiSearch, FiUser, FiCheckCircle } from 'react-icons/fi';
 import Pagination from '../components/common/Pagination';
+import SortableHeader from '../components/common/SortableHeader';
 import usePagination from '../hooks/usePagination';
+import useSortableTable from '../hooks/useSortableTable';
 
 const Residents = () => {
   const { t, i18n } = useTranslation();
@@ -24,7 +26,8 @@ const Residents = () => {
   const [showActivateConfirm, setShowActivateConfirm] = useState(false);
   const [selectedResident, setSelectedResident] = useState(null);
   const [form, setForm] = useState({ firstName: '', lastName: '', cedula: '', admissionDate: '', notes: '', sucursal: '' });
-  const { paginatedData: paginatedResidents, currentPage, rowsPerPage, totalItems, handlePageChange, handleRowsPerPageChange } = usePagination(residents);
+  const { sortedData: sortedResidents, sortConfig, requestSort } = useSortableTable(residents);
+  const { paginatedData: paginatedResidents, currentPage, rowsPerPage, totalItems, handlePageChange, handleRowsPerPageChange } = usePagination(sortedResidents);
 
   useEffect(() => {
     settingsAPI.get().then(res => {
@@ -175,10 +178,10 @@ const Residents = () => {
               <table>
                 <thead>
                   <tr>
-                    <th>{t('residents.firstName')}</th>
-                    <th>{t('residents.lastName')}</th>
+                    <SortableHeader label={t('residents.firstName')} sortKey="firstName" sortConfig={sortConfig} onSort={requestSort} />
+                    <SortableHeader label={t('residents.lastName')} sortKey="lastName" sortConfig={sortConfig} onSort={requestSort} />
                     <th>{t('residents.cedula')}</th>
-                    <th>{isEs ? 'Sucursal' : 'Branch'}</th>
+                    <SortableHeader label={isEs ? 'Sucursal' : 'Branch'} sortKey="sucursal" sortConfig={sortConfig} onSort={requestSort} />
                     <th>{t('residents.admissionDate')}</th>
                     <th>{t('app.status')}</th>
                     <th>{t('app.actions')}</th>

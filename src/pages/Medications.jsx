@@ -6,7 +6,9 @@ import Modal from '../components/common/Modal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { FiPlus, FiEdit, FiTrash2, FiSearch, FiPackage, FiCheckCircle } from 'react-icons/fi';
 import Pagination from '../components/common/Pagination';
+import SortableHeader from '../components/common/SortableHeader';
 import usePagination from '../hooks/usePagination';
+import useSortableTable from '../hooks/useSortableTable';
 
 const Medications = () => {
   const { t } = useTranslation();
@@ -19,7 +21,8 @@ const Medications = () => {
   const [showActivateConfirm, setShowActivateConfirm] = useState(false);
   const [selected, setSelected] = useState(null);
   const [form, setForm] = useState({ genericName: '', commercialName: '', dosageUnit: 'mg', form: 'tablet', description: '' });
-  const { paginatedData: paginatedMedications, currentPage, rowsPerPage, totalItems, handlePageChange, handleRowsPerPageChange } = usePagination(medications);
+  const { sortedData: sortedMedications, sortConfig, requestSort } = useSortableTable(medications);
+  const { paginatedData: paginatedMedications, currentPage, rowsPerPage, totalItems, handlePageChange, handleRowsPerPageChange } = usePagination(sortedMedications);
 
   const units = ['mg', 'ml', 'g', 'mcg', 'UI', 'drops', 'sachets', 'tablets', 'capsules', 'other'];
   const forms = ['tablet', 'capsule', 'liquid', 'drops', 'injection', 'cream', 'inhaler', 'sachet', 'other'];
@@ -126,8 +129,8 @@ const Medications = () => {
               <table>
                 <thead>
                   <tr>
-                    <th>{t('medications.genericName')}</th>
-                    <th>{t('medications.commercialName')}</th>
+                    <SortableHeader label={t('medications.genericName')} sortKey="genericName" sortConfig={sortConfig} onSort={requestSort} />
+                    <SortableHeader label={t('medications.commercialName')} sortKey="commercialName" sortConfig={sortConfig} onSort={requestSort} />
                     <th>{t('medications.dosageUnit')}</th>
                     <th>{t('medications.form')}</th>
                     <th>{t('app.status')}</th>

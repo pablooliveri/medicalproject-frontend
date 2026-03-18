@@ -4,7 +4,9 @@ import { useParams, Link } from 'react-router-dom';
 import { residentsAPI, residentMedicationsAPI, medicationsAPI, reportsAPI, medicationHistoryAPI } from '../services/api';
 import { toast } from 'react-toastify';
 import Modal from '../components/common/Modal';
-import { FiArrowLeft, FiPlus, FiEdit, FiXCircle, FiCheckCircle, FiFileText, FiPackage, FiClock, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiArrowLeft, FiPlus, FiEdit, FiXCircle, FiCheckCircle, FiFileText, FiPackage, FiClock, FiChevronLeft, FiChevronRight, FiCalendar } from 'react-icons/fi';
+import SortableHeader from '../components/common/SortableHeader';
+import useSortableTable from '../hooks/useSortableTable';
 
 const FORM_LABELS = {
   tablet: 'COMP',
@@ -58,6 +60,15 @@ const ResidentDetail = () => {
     medication: '', dosageMg: '', currentStock: 0, notes: '',
     schedule: { breakfast: 0, lunch: 0, snack: 0, dinner: 0 }
   });
+
+  // Sortable table for medications
+  const { sortedData: sortedActiveMeds, sortConfig, requestSort } = useSortableTable(activeMeds);
+  const { sortedData: sortedInactiveMeds } = useSortableTable(inactiveMeds);
+
+  // Report month selector state
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportMonth, setReportMonth] = useState(new Date().getMonth() + 1);
+  const [reportYear, setReportYear] = useState(new Date().getFullYear());
 
   // History state
   const [historyMonths, setHistoryMonths] = useState([]);
@@ -207,12 +218,19 @@ const ResidentDetail = () => {
     }
   };
 
+  const openReportModal = () => {
+    setReportMonth(new Date().getMonth() + 1);
+    setReportYear(new Date().getFullYear());
+    setShowReportModal(true);
+  };
+
   const generateReport = async () => {
     try {
-      const response = await reportsAPI.residentReport(id);
+      const response = await reportsAPI.residentReport(id, { month: reportMonth, year: reportYear });
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       window.open(url, '_blank');
+      setShowReportModal(false);
     } catch (error) {
       toast.error(t('app.error'));
     }
@@ -263,7 +281,7 @@ const ResidentDetail = () => {
           <h1>{resident.firstName} {resident.lastName}</h1>
         </div>
         <div className="page-actions">
-          <button className="btn btn-secondary" onClick={generateReport}><FiFileText /> {t('reports.generateResident')}</button>
+          <button className="btn btn-secondary" onClick={openReportModal}><FiFileText /> {t('reports.generateResident')}</button>
           <button className="btn btn-primary" onClick={openAssign}><FiPlus /> {t('residentMedications.assignMedication')}</button>
         </div>
       </div>
@@ -335,7 +353,7 @@ const ResidentDetail = () => {
                   <table className="medication-card-table">
                     <thead>
                       <tr>
-                        <th style={{ textAlign: 'left', minWidth: 220 }}>{isEs ? 'Medicación' : 'Medication'}</th>
+                        <SortableHeader label={isEs ? 'Medicación' : 'Medication'} sortKey="medication.genericName" sortConfig={sortConfig} onSort={requestSort} style={{ textAlign: 'left', minWidth: 220 }} />
                         <th style={{ textAlign: 'center', width: 120 }}>{isEs ? 'Desayuno' : 'Breakfast'}</th>
                         <th style={{ textAlign: 'center', width: 120 }}>{isEs ? 'Almuerzo' : 'Lunch'}</th>
                         <th style={{ textAlign: 'center', width: 120 }}>{isEs ? 'Merienda' : 'Snack'}</th>
@@ -344,7 +362,7 @@ const ResidentDetail = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {activeMeds.map(med => {
+                      {sortedActiveMeds.map(med => {
                         const formLabel = getFormLabel(med.medication);
                         return (
                           <tr key={med._id}>
@@ -398,7 +416,7 @@ const ResidentDetail = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th>{isEs ? 'Medicación' : 'Medication'}</th>
+                      <SortableHeader label={isEs ? 'Medicación' : 'Medication'} sortKey="medication.genericName" sortConfig={sortConfig} onSort={requestSort} />
                       <th>{isEs ? 'Dosis' : 'Dose'}</th>
                       <th>{isEs ? 'Consumo Diario' : 'Daily Use'}</th>
                       <th>{t('residentMedications.currentStock')}</th>
@@ -407,7 +425,7 @@ const ResidentDetail = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {activeMeds.map(med => {
+                    {sortedActiveMeds.map(med => {
                       const days = calcDays(med);
                       const daily = (med.schedule?.breakfast || 0) + (med.schedule?.lunch || 0) + (med.schedule?.snack || 0) + (med.schedule?.dinner || 0);
                       const coverDate = days !== null ? (() => { const d = new Date(); d.setDate(d.getDate() + days); return d.toLocaleDateString(); })() : 'N/A';
@@ -539,7 +557,7 @@ const ResidentDetail = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th>{isEs ? 'Medicación' : 'Medication'}</th>
+                      <SortableHeader label={isEs ? 'Medicación' : 'Medication'} sortKey="medication.genericName" sortConfig={sortConfig} onSort={requestSort} />
                       <th>{isEs ? 'Dosis' : 'Dose'}</th>
                       <th>{isEs ? 'Desayuno' : 'Breakfast'}</th>
                       <th>{isEs ? 'Almuerzo' : 'Lunch'}</th>
@@ -551,7 +569,7 @@ const ResidentDetail = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {inactiveMeds.map(med => (
+                    {sortedInactiveMeds.map(med => (
                       <tr key={med._id}>
                         <td>{(med.medication?.genericName || 'N/A').toUpperCase()}</td>
                         <td>{med.dosageMg} {med.medication?.dosageUnit}</td>
@@ -633,6 +651,52 @@ const ResidentDetail = () => {
           <div className="form-group">
             <label className="form-label">{t('app.notes')}</label>
             <textarea className="form-control" value={form.notes} onChange={(e) => setForm({...form, notes: e.target.value})} />
+          </div>
+        </Modal>
+      )}
+
+      {/* Report Month Selector Modal */}
+      {showReportModal && (
+        <Modal
+          title={isEs ? 'Generar Reporte de Medicación' : 'Generate Medication Report'}
+          onClose={() => setShowReportModal(false)}
+          footer={
+            <>
+              <button className="btn btn-secondary" onClick={() => setShowReportModal(false)}>{t('app.cancel')}</button>
+              <button className="btn btn-primary" onClick={generateReport}><FiFileText style={{ marginRight: 4 }} /> {isEs ? 'Generar PDF' : 'Generate PDF'}</button>
+            </>
+          }
+        >
+          <p style={{ color: '#666', marginBottom: 16 }}>
+            {isEs
+              ? 'Seleccione el mes y año para el reporte. Se incluirán los medicamentos activos e inactivos del período seleccionado.'
+              : 'Select month and year for the report. Active and inactive medications for the selected period will be included.'}
+          </p>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label"><FiCalendar style={{ marginRight: 4 }} />{isEs ? 'Mes' : 'Month'}</label>
+              <select
+                className="form-control"
+                value={reportMonth}
+                onChange={(e) => setReportMonth(Number(e.target.value))}
+              >
+                {MONTH_NAMES_ES.map((name, idx) => (
+                  <option key={idx} value={idx + 1}>{isEs ? name : new Date(2000, idx).toLocaleString('en', { month: 'long' })}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">{isEs ? 'Año' : 'Year'}</label>
+              <select
+                className="form-control"
+                value={reportYear}
+                onChange={(e) => setReportYear(Number(e.target.value))}
+              >
+                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </Modal>
       )}

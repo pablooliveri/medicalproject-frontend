@@ -4,7 +4,9 @@ import { Link } from 'react-router-dom';
 import { residentsAPI, medicationsAPI, residentMedicationsAPI, deliveriesAPI, settingsAPI } from '../services/api';
 import { FiUsers, FiPackage, FiAlertTriangle, FiAlertCircle, FiPlus, FiFileText, FiTruck } from 'react-icons/fi';
 import Pagination from '../components/common/Pagination';
+import SortableHeader from '../components/common/SortableHeader';
 import usePagination from '../hooks/usePagination';
+import useSortableTable from '../hooks/useSortableTable';
 
 const Dashboard = () => {
   const { t } = useTranslation();
@@ -12,8 +14,10 @@ const Dashboard = () => {
   const [shortages, setShortages] = useState([]);
   const [recentDeliveries, setRecentDeliveries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { paginatedData: paginatedShortages, currentPage: shortagesPage, rowsPerPage: shortagesRowsPerPage, totalItems: shortagesTotal, handlePageChange: shortagesPageChange, handleRowsPerPageChange: shortagesRowsChange } = usePagination(shortages);
-  const { paginatedData: paginatedDeliveries, currentPage: deliveriesPage, rowsPerPage: deliveriesRowsPerPage, totalItems: deliveriesTotal, handlePageChange: deliveriesPageChange, handleRowsPerPageChange: deliveriesRowsChange } = usePagination(recentDeliveries);
+  const { sortedData: sortedShortages, sortConfig: shortagesSortConfig, requestSort: shortagesRequestSort } = useSortableTable(shortages);
+  const { sortedData: sortedDeliveries, sortConfig: deliveriesSortConfig, requestSort: deliveriesRequestSort } = useSortableTable(recentDeliveries);
+  const { paginatedData: paginatedShortages, currentPage: shortagesPage, rowsPerPage: shortagesRowsPerPage, totalItems: shortagesTotal, handlePageChange: shortagesPageChange, handleRowsPerPageChange: shortagesRowsChange } = usePagination(sortedShortages);
+  const { paginatedData: paginatedDeliveries, currentPage: deliveriesPage, rowsPerPage: deliveriesRowsPerPage, totalItems: deliveriesTotal, handlePageChange: deliveriesPageChange, handleRowsPerPageChange: deliveriesRowsChange } = usePagination(sortedDeliveries);
 
   useEffect(() => {
     fetchData();
@@ -144,9 +148,9 @@ const Dashboard = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th>{t('dashboard.residentName')}</th>
-                      <th>{t('dashboard.medication')}</th>
-                      <th>{t('dashboard.daysRemaining')}</th>
+                      <SortableHeader label={t('dashboard.residentName')} sortKey="residentName" sortConfig={shortagesSortConfig} onSort={shortagesRequestSort} />
+                      <SortableHeader label={t('dashboard.medication')} sortKey="medicationName" sortConfig={shortagesSortConfig} onSort={shortagesRequestSort} />
+                      <SortableHeader label={t('dashboard.daysRemaining')} sortKey="daysRemaining" sortConfig={shortagesSortConfig} onSort={shortagesRequestSort} />
                     </tr>
                   </thead>
                   <tbody>
@@ -184,9 +188,9 @@ const Dashboard = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th>{t('app.date')}</th>
-                      <th>{t('dashboard.residentName')}</th>
-                      <th>{t('deliveries.deliveredBy')}</th>
+                      <SortableHeader label={t('app.date')} sortKey="deliveryDate" sortConfig={deliveriesSortConfig} onSort={deliveriesRequestSort} />
+                      <SortableHeader label={t('dashboard.residentName')} sortKey="resident.firstName" sortConfig={deliveriesSortConfig} onSort={deliveriesRequestSort} />
+                      <SortableHeader label={t('deliveries.deliveredBy')} sortKey="deliveredBy" sortConfig={deliveriesSortConfig} onSort={deliveriesRequestSort} />
                     </tr>
                   </thead>
                   <tbody>

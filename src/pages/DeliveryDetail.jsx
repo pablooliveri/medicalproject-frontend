@@ -4,6 +4,8 @@ import { useParams, Link } from 'react-router-dom';
 import { deliveriesAPI, reportsAPI } from '../services/api';
 import { toast } from 'react-toastify';
 import { FiArrowLeft, FiFileText, FiImage } from 'react-icons/fi';
+import SortableHeader from '../components/common/SortableHeader';
+import useSortableTable from '../hooks/useSortableTable';
 
 const API_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://medicalproject-backend-production.up.railway.app';
 
@@ -12,6 +14,7 @@ const DeliveryDetail = () => {
   const { id } = useParams();
   const [delivery, setDelivery] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { sortedData: sortedItems, sortConfig, requestSort } = useSortableTable(delivery?.items || []);
 
   useEffect(() => {
     deliveriesAPI.getOne(id)
@@ -62,12 +65,12 @@ const DeliveryDetail = () => {
             <table>
               <thead>
                 <tr>
-                  <th>{t('deliveries.medication')}</th>
-                  <th>{t('deliveries.quantity')}</th>
+                  <SortableHeader label={t('deliveries.medication')} sortKey="medication.genericName" sortConfig={sortConfig} onSort={requestSort} />
+                  <SortableHeader label={t('deliveries.quantity')} sortKey="quantity" sortConfig={sortConfig} onSort={requestSort} />
                 </tr>
               </thead>
               <tbody>
-                {delivery.items?.map((item, i) => (
+                {sortedItems.map((item, i) => (
                   <tr key={i}>
                     <td>{item.medication?.genericName || 'N/A'}</td>
                     <td>{item.quantity}</td>

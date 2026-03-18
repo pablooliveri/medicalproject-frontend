@@ -6,7 +6,9 @@ import Modal from '../components/common/Modal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { FiBarChart2, FiEdit, FiRefreshCw, FiClock } from 'react-icons/fi';
 import Pagination from '../components/common/Pagination';
+import SortableHeader from '../components/common/SortableHeader';
 import usePagination from '../hooks/usePagination';
+import useSortableTable from '../hooks/useSortableTable';
 
 const StockManagement = () => {
   const { t } = useTranslation();
@@ -18,8 +20,10 @@ const StockManagement = () => {
   const [showDeductConfirm, setShowDeductConfirm] = useState(false);
   const [adjustForm, setAdjustForm] = useState({ residentMedicationId: '', medName: '', currentStock: 0, newStock: '', reason: '' });
   const [activeTab, setActiveTab] = useState('status');
-  const { paginatedData: paginatedStatus, currentPage: statusPage, rowsPerPage: statusRowsPerPage, totalItems: statusTotal, handlePageChange: statusPageChange, handleRowsPerPageChange: statusRowsChange } = usePagination(stockStatus);
-  const { paginatedData: paginatedMovements, currentPage: movementsPage, rowsPerPage: movementsRowsPerPage, totalItems: movementsTotal, handlePageChange: movementsPageChange, handleRowsPerPageChange: movementsRowsChange } = usePagination(movements);
+  const { sortedData: sortedStatus, sortConfig: statusSortConfig, requestSort: statusRequestSort } = useSortableTable(stockStatus);
+  const { sortedData: sortedMovements, sortConfig: movementsSortConfig, requestSort: movementsRequestSort } = useSortableTable(movements);
+  const { paginatedData: paginatedStatus, currentPage: statusPage, rowsPerPage: statusRowsPerPage, totalItems: statusTotal, handlePageChange: statusPageChange, handleRowsPerPageChange: statusRowsChange } = usePagination(sortedStatus);
+  const { paginatedData: paginatedMovements, currentPage: movementsPage, rowsPerPage: movementsRowsPerPage, totalItems: movementsTotal, handlePageChange: movementsPageChange, handleRowsPerPageChange: movementsRowsChange } = usePagination(sortedMovements);
 
   useEffect(() => {
     residentsAPI.getAll({ isActive: true }).then(res => setResidents(res.data)).catch(console.error);
@@ -138,11 +142,11 @@ const StockManagement = () => {
                     <table>
                       <thead>
                         <tr>
-                          <th>{t('residentMedications.medication')}</th>
+                          <SortableHeader label={t('residentMedications.medication')} sortKey="medication.genericName" sortConfig={statusSortConfig} onSort={statusRequestSort} />
                           <th>{t('residentMedications.dosageMg')}</th>
-                          <th>{t('stock.dailyConsumption')}</th>
-                          <th>{t('stock.currentStock')}</th>
-                          <th>{t('stock.daysRemaining')}</th>
+                          <SortableHeader label={t('stock.dailyConsumption')} sortKey="dailyConsumption" sortConfig={statusSortConfig} onSort={statusRequestSort} />
+                          <SortableHeader label={t('stock.currentStock')} sortKey="currentStock" sortConfig={statusSortConfig} onSort={statusRequestSort} />
+                          <SortableHeader label={t('stock.daysRemaining')} sortKey="daysRemaining" sortConfig={statusSortConfig} onSort={statusRequestSort} />
                           <th>{t('stock.coverageDate')}</th>
                           <th>{t('app.actions')}</th>
                         </tr>
@@ -180,9 +184,9 @@ const StockManagement = () => {
                     <table>
                       <thead>
                         <tr>
-                          <th>{t('stock.movementDate')}</th>
-                          <th>{t('residentMedications.medication')}</th>
-                          <th>{t('stock.movementType')}</th>
+                          <SortableHeader label={t('stock.movementDate')} sortKey="date" sortConfig={movementsSortConfig} onSort={movementsRequestSort} />
+                          <SortableHeader label={t('residentMedications.medication')} sortKey="medication.genericName" sortConfig={movementsSortConfig} onSort={movementsRequestSort} />
+                          <SortableHeader label={t('stock.movementType')} sortKey="type" sortConfig={movementsSortConfig} onSort={movementsRequestSort} />
                           <th>{t('stock.movementQuantity')}</th>
                           <th>{t('stock.previousStock')}</th>
                           <th>{t('stock.newStock')}</th>

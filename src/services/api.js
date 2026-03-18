@@ -115,7 +115,7 @@ export const settingsAPI = {
 // Reports
 export const reportsAPI = {
   deliveryReport: (id) => api.get(`/reports/delivery/${id}`, { responseType: 'blob' }),
-  residentReport: (id) => api.get(`/reports/resident/${id}`, { responseType: 'blob' })
+  residentReport: (id, params = {}) => api.get(`/reports/resident/${id}`, { responseType: 'blob', params })
 };
 
 export default api;

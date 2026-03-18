@@ -5,7 +5,9 @@ import { deliveriesAPI, residentsAPI, reportsAPI } from '../services/api';
 import { toast } from 'react-toastify';
 import { FiPlus, FiEye, FiFileText, FiTruck, FiSearch } from 'react-icons/fi';
 import Pagination from '../components/common/Pagination';
+import SortableHeader from '../components/common/SortableHeader';
 import usePagination from '../hooks/usePagination';
+import useSortableTable from '../hooks/useSortableTable';
 
 const Deliveries = () => {
   const { t } = useTranslation();
@@ -14,7 +16,8 @@ const Deliveries = () => {
   const [residents, setResidents] = useState([]);
   const [filterResident, setFilterResident] = useState('');
   const [loading, setLoading] = useState(true);
-  const { paginatedData: paginatedDeliveries, currentPage, rowsPerPage, totalItems, handlePageChange, handleRowsPerPageChange } = usePagination(deliveries);
+  const { sortedData: sortedDeliveries, sortConfig, requestSort } = useSortableTable(deliveries);
+  const { paginatedData: paginatedDeliveries, currentPage, rowsPerPage, totalItems, handlePageChange, handleRowsPerPageChange } = usePagination(sortedDeliveries);
 
   useEffect(() => { fetchData(); }, [filterResident]);
 
@@ -70,9 +73,9 @@ const Deliveries = () => {
               <table>
                 <thead>
                   <tr>
-                    <th>{t('deliveries.deliveryDate')}</th>
-                    <th>{t('dashboard.residentName')}</th>
-                    <th>{t('deliveries.deliveredBy')}</th>
+                    <SortableHeader label={t('deliveries.deliveryDate')} sortKey="deliveryDate" sortConfig={sortConfig} onSort={requestSort} />
+                    <SortableHeader label={t('dashboard.residentName')} sortKey="resident.firstName" sortConfig={sortConfig} onSort={requestSort} />
+                    <SortableHeader label={t('deliveries.deliveredBy')} sortKey="deliveredBy" sortConfig={sortConfig} onSort={requestSort} />
                     <th>{t('deliveries.totalItems')}</th>
                     <th>{t('app.actions')}</th>
                   </tr>
