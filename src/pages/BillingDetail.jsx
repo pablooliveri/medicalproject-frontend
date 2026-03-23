@@ -828,7 +828,7 @@ export default function BillingDetail() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="form-group">
               <label className="form-label">{t('billing.unitPrice')} *</label>
-              <input type="number" className="form-control" value={expenseForm.unitPrice} min={0}
+              <input type="number" className="form-control" value={expenseForm.unitPrice}
                 onChange={e => setExpenseForm(p => ({ ...p, unitPrice: e.target.value }))} />
             </div>
             <div className="form-group">
