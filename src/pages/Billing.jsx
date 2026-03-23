@@ -17,7 +17,7 @@ const MONTHS_EN = ['January','February','March','April','May','June','July','Aug
 
 const formatCurrency = (amount) => {
   if (!amount && amount !== 0) return '$U 0';
-  return `$U ${Number(amount).toLocaleString('es-UY')}`;
+  return `$U ${Math.round(Number(amount)).toLocaleString('es-UY')}`;
 };
 
 export default function Billing() {

@@ -19,7 +19,7 @@ const MONTHS_EN = ['January','February','March','April','May','June','July','Aug
 
 const formatCurrency = (amount) => {
   if (!amount && amount !== 0) return '$U 0';
-  return `$U ${Number(amount).toLocaleString('es-UY')}`;
+  return `$U ${Math.round(Number(amount)).toLocaleString('es-UY')}`;
 };
 
 export default function BillingDetail() {
@@ -45,6 +45,19 @@ export default function BillingDetail() {
 
   // Search state
   const [expenseSearch, setExpenseSearch] = useState('');
+
+  // Addenda
+  const [addenda, setAddenda] = useState('');
+  const [savingAddenda, setSavingAddenda] = useState(false);
+
+  // Variable adjustment
+  const [adjustmentPct, setAdjustmentPct] = useState('');
+  const [applyingAdjustment, setApplyingAdjustment] = useState(false);
+
+  // Recurring concepts (for config tab)
+  const [recurringExpenses, setRecurringExpenses] = useState([]);
+  const [newRecurring, setNewRecurring] = useState({ concept: '', unitPrice: '', quantity: 1 });
+  const [loadingRecurring, setLoadingRecurring] = useState(false);
 
   // Modals
   const [expenseModal, setExpenseModal] = useState(false);
@@ -77,6 +90,7 @@ export default function BillingDetail() {
         adjustmentMonths: configRes.data.adjustmentMonths || [],
         notes: configRes.data.notes || ''
       });
+      setRecurringExpenses(configRes.data.recurringExpenses || []);
       setExpenses(expensesRes.data);
       setAllStatements(statementsRes.data);
 
@@ -86,6 +100,7 @@ export default function BillingDetail() {
       try {
         const stmtRes = await billingAPI.getStatement(residentId, currentMonth, currentYear);
         setStatement(stmtRes.data);
+        setAddenda(stmtRes.data.addenda || '');
         if (stmtRes.data._id) {
           const paymentsRes = await billingAPI.getPayments(stmtRes.data._id);
           setPayments(paymentsRes.data);
@@ -205,6 +220,16 @@ export default function BillingDetail() {
     }
   };
 
+  const deleteStatement = async (id) => {
+    try {
+      await billingAPI.deleteStatement(id);
+      toast.success(isEs ? 'Estado eliminado' : 'Statement deleted');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || t('app.error'));
+    }
+  };
+
   const deletePayment = async (id) => {
     try {
       await billingAPI.deletePayment(id);
@@ -233,6 +258,79 @@ export default function BillingDetail() {
         ? prev.adjustmentMonths.filter(m => m !== month)
         : [...prev.adjustmentMonths, month]
     }));
+  };
+
+  // Save addenda
+  const saveAddenda = async () => {
+    if (!statement?._id) return toast.error(isEs ? 'Primero genere el estado del mes' : 'Generate the statement first');
+    setSavingAddenda(true);
+    try {
+      await billingAPI.updateStatement(statement._id, { addenda });
+      toast.success(isEs ? 'Mensaje guardado' : 'Message saved');
+    } catch (error) {
+      toast.error(error.response?.data?.message || t('app.error'));
+    } finally {
+      setSavingAddenda(false);
+    }
+  };
+
+  // Apply variable adjustment
+  const applyAdjustment = async () => {
+    if (!adjustmentPct || Number(adjustmentPct) <= 0) return toast.error(isEs ? 'Ingrese un porcentaje válido' : 'Enter a valid percentage');
+    setApplyingAdjustment(true);
+    try {
+      await billingAPI.createStatement(residentId, {
+        month: currentMonth, year: currentYear,
+        applyAdjustment: true,
+        adjustmentPercentage: Number(adjustmentPct)
+      });
+      toast.success(isEs ? `Ajuste de ${adjustmentPct}% aplicado` : `${adjustmentPct}% adjustment applied`);
+      setAdjustmentPct('');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || t('app.error'));
+    } finally {
+      setApplyingAdjustment(false);
+    }
+  };
+
+  // Load recurring expenses
+  const loadRecurring = async () => {
+    setLoadingRecurring(true);
+    try {
+      const res = await billingAPI.loadRecurring(residentId, { month: currentMonth, year: currentYear });
+      if (res.data.created === 0) {
+        toast.info(isEs ? 'Todos los conceptos ya estaban cargados' : 'All concepts already loaded');
+      } else {
+        toast.success(isEs ? `${res.data.created} concepto(s) cargados` : `${res.data.created} concept(s) loaded`);
+      }
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || t('app.error'));
+    } finally {
+      setLoadingRecurring(false);
+    }
+  };
+
+  // Recurring concept CRUD (local state, saved with config)
+  const addRecurringConcept = () => {
+    if (!newRecurring.concept || !newRecurring.unitPrice) return;
+    setRecurringExpenses(prev => [...prev, { concept: newRecurring.concept, unitPrice: Number(newRecurring.unitPrice), quantity: Number(newRecurring.quantity) || 1 }]);
+    setNewRecurring({ concept: '', unitPrice: '', quantity: 1 });
+  };
+
+  const removeRecurringConcept = (index) => {
+    setRecurringExpenses(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const saveConfigWithRecurring = async () => {
+    try {
+      await billingAPI.upsertConfig(residentId, { ...configForm, recurringExpenses });
+      toast.success(t('billing.configSaved'));
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || t('app.error'));
+    }
   };
 
   // PDF generation
@@ -323,10 +421,24 @@ export default function BillingDetail() {
           {/* Adjustment alert */}
           {adjustmentAlert && (
             <div className="card" style={{ marginBottom: 16, borderLeft: '4px solid #f59e0b', background: '#fffbeb' }}>
-              <div className="card-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#92400e' }}>
-                  ⚠️ {t('billing.adjustmentAlert')} (+{config.adjustmentPercentage}%)
+              <div className="card-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                <span style={{ color: '#92400e', fontWeight: 600 }}>
+                  ⚠️ {t('billing.adjustmentAlert')}
                 </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    type="number"
+                    className="form-control"
+                    style={{ width: 100 }}
+                    placeholder={isEs ? 'Porcentaje %' : 'Percentage %'}
+                    value={adjustmentPct}
+                    min={0}
+                    onChange={e => setAdjustmentPct(e.target.value)}
+                  />
+                  <button className="btn btn-warning" onClick={applyAdjustment} disabled={applyingAdjustment}>
+                    {applyingAdjustment ? '...' : t('billing.applyAdjustment')}
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -357,11 +469,18 @@ export default function BillingDetail() {
 
           {/* Expenses table */}
           <div className="card" style={{ marginBottom: 16 }}>
-            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
               <h3 className="card-title">{t('billing.expenses')}</h3>
-              <button className="btn btn-primary btn-sm" onClick={openAddExpense}>
-                <FiPlus style={{ marginRight: 4 }} />{t('billing.addExpense')}
-              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {recurringExpenses.length > 0 && (
+                  <button className="btn btn-secondary btn-sm" onClick={loadRecurring} disabled={loadingRecurring}>
+                    {loadingRecurring ? '...' : (isEs ? '↺ Cargar Recurrentes' : '↺ Load Recurring')}
+                  </button>
+                )}
+                <button className="btn btn-primary btn-sm" onClick={openAddExpense}>
+                  <FiPlus style={{ marginRight: 4 }} />{t('billing.addExpense')}
+                </button>
+              </div>
             </div>
             <div className="card-body">
               {/* Search */}
@@ -480,6 +599,27 @@ export default function BillingDetail() {
               )}
             </div>
           </div>
+          {/* Addenda */}
+          <div className="card" style={{ marginTop: 16 }}>
+            <div className="card-header">
+              <h3 className="card-title">{isEs ? 'Mensaje / Adenda' : 'Message / Addenda'}</h3>
+            </div>
+            <div className="card-body">
+              <p style={{ fontSize: 13, color: '#888', marginBottom: 8 }}>
+                {isEs ? 'Este mensaje aparecerá en el PDF del estado de cuenta (ej: aviso de aumento).' : 'This message will appear in the PDF statement (e.g. price increase notice).'}
+              </p>
+              <textarea
+                className="form-control"
+                rows={3}
+                value={addenda}
+                onChange={e => setAddenda(e.target.value)}
+                placeholder={isEs ? 'Ej: Se informa aumento del 8% a partir del mes de Abril...' : 'E.g. Price increase of 8% starting April...'}
+              />
+              <button className="btn btn-primary" style={{ marginTop: 8 }} onClick={saveAddenda} disabled={savingAddenda}>
+                <FiSave style={{ marginRight: 4 }} />{savingAddenda ? '...' : (isEs ? 'Guardar mensaje' : 'Save message')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -505,22 +645,29 @@ export default function BillingDetail() {
                         <SortableHeader label={t('billing.amountPaid')} sortKey="amountPaid" sortConfig={stmtSortConfig} onSort={stmtRequestSort} style={{ textAlign: 'right' }} />
                         <SortableHeader label={t('billing.balance')} sortKey="balance" sortConfig={stmtSortConfig} onSort={stmtRequestSort} style={{ textAlign: 'right' }} />
                         <SortableHeader label={t('app.status')} sortKey="status" sortConfig={stmtSortConfig} onSort={stmtRequestSort} />
+                        <th>{t('app.actions')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {pagedStatements.map(s => (
-                        <tr
-                          key={s._id}
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => { setCurrentMonth(s.month); setCurrentYear(s.year); setActiveTab('statement'); }}
-                        >
-                          <td>{MONTHS[s.month - 1]} {s.year}</td>
+                        <tr key={s._id}>
+                          <td
+                            style={{ cursor: 'pointer', color: '#7c3aed' }}
+                            onClick={() => { setCurrentMonth(s.month); setCurrentYear(s.year); setActiveTab('statement'); }}
+                          >
+                            {MONTHS[s.month - 1]} {s.year}
+                          </td>
                           <td style={{ textAlign: 'right' }}>{formatCurrency(s.monthlyFee)}</td>
                           <td style={{ textAlign: 'right' }}>{formatCurrency(s.totalExpenses)}</td>
                           <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatCurrency(s.totalAmount)}</td>
                           <td style={{ textAlign: 'right' }}>{formatCurrency(s.amountPaid)}</td>
                           <td style={{ textAlign: 'right', color: s.balance > 0 ? '#dc3545' : '#28a745', fontWeight: 600 }}>{formatCurrency(s.balance)}</td>
                           <td><span className={`badge ${statusClass[s.status]}`}>{statusLabel[s.status]}</span></td>
+                          <td>
+                            <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete({ type: 'statement', id: s._id })}>
+                              <FiTrash2 />
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -594,8 +741,68 @@ export default function BillingDetail() {
               />
             </div>
 
-            <button className="btn btn-primary" onClick={saveConfig} style={{ marginTop: 8 }}>
+            <button className="btn btn-primary" onClick={saveConfigWithRecurring} style={{ marginTop: 8 }}>
               <FiSave style={{ marginRight: 4 }} />{t('app.save')}
+            </button>
+
+            {/* Recurring expenses */}
+            <hr style={{ margin: '24px 0', borderColor: '#333' }} />
+            <h4 style={{ marginBottom: 12 }}>{isEs ? 'Conceptos Recurrentes' : 'Recurring Concepts'}</h4>
+            <p style={{ fontSize: 13, color: '#888', marginBottom: 12 }}>
+              {isEs ? 'Estos conceptos se cargarán automáticamente cada mes con el botón "Cargar Recurrentes".' : 'These concepts will be loaded each month using the "Load Recurring" button.'}
+            </p>
+
+            {/* Add new recurring concept */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: 8, marginBottom: 12, alignItems: 'end' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">{t('billing.concept')}</label>
+                <input className="form-control" value={newRecurring.concept}
+                  onChange={e => setNewRecurring(p => ({ ...p, concept: e.target.value }))}
+                  placeholder={isEs ? 'Ej: Pañales' : 'E.g. Diapers'} />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">{t('billing.unitPrice')}</label>
+                <input type="number" className="form-control" value={newRecurring.unitPrice} min={0}
+                  onChange={e => setNewRecurring(p => ({ ...p, unitPrice: e.target.value }))} />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">{t('billing.quantity')}</label>
+                <input type="number" className="form-control" value={newRecurring.quantity} min={1}
+                  onChange={e => setNewRecurring(p => ({ ...p, quantity: e.target.value }))} />
+              </div>
+              <button className="btn btn-primary" onClick={addRecurringConcept} style={{ marginBottom: 1 }}>
+                <FiPlus />
+              </button>
+            </div>
+
+            {recurringExpenses.length > 0 && (
+              <div className="table-container" style={{ marginBottom: 12 }}>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>{t('billing.concept')}</th>
+                      <th style={{ textAlign: 'right' }}>{t('billing.unitPrice')}</th>
+                      <th style={{ textAlign: 'center' }}>{t('billing.quantity')}</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recurringExpenses.map((r, i) => (
+                      <tr key={i}>
+                        <td>{r.concept}</td>
+                        <td style={{ textAlign: 'right' }}>{formatCurrency(r.unitPrice)}</td>
+                        <td style={{ textAlign: 'center' }}>{r.quantity}</td>
+                        <td>
+                          <button className="btn btn-danger btn-sm" onClick={() => removeRecurringConcept(i)}><FiTrash2 /></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <button className="btn btn-success" onClick={saveConfigWithRecurring}>
+              <FiSave style={{ marginRight: 4 }} />{isEs ? 'Guardar Conceptos Recurrentes' : 'Save Recurring Concepts'}
             </button>
           </div>
         </div>
@@ -745,6 +952,7 @@ export default function BillingDetail() {
           onConfirm={() => {
             if (confirmDelete.type === 'expense') deleteExpense(confirmDelete.id);
             if (confirmDelete.type === 'payment') deletePayment(confirmDelete.id);
+            if (confirmDelete.type === 'statement') deleteStatement(confirmDelete.id);
             setConfirmDelete(null);
           }}
           onCancel={() => setConfirmDelete(null)}

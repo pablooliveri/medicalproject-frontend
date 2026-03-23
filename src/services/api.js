@@ -144,6 +144,8 @@ export const billingAPI = {
   getPayments: (statementId) => api.get(`/billing/payments/${statementId}`),
   createPayment: (statementId, data) => api.post(`/billing/payments/${statementId}`, data),
   deletePayment: (paymentId) => api.delete(`/billing/payments/${paymentId}`),
+  deleteStatement: (statementId) => api.delete(`/billing/statements/${statementId}`),
+  loadRecurring: (residentId, data) => api.post(`/billing/expenses/${residentId}/load-recurring`, data),
 
   // Aggregated
   getDebtors: (params) => api.get('/billing/debtors', { params }),
