@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { residentsAPI, deliveriesAPI, reportsAPI, settingsAPI } from '../services/api';
+import { residentsAPI, deliveriesAPI, reportsAPI, settingsAPI, billingAPI } from '../services/api';
 import { toast } from 'react-toastify';
-import { FiFileText, FiDownload, FiUser, FiTruck, FiUsers } from 'react-icons/fi';
+import { FiFileText, FiDownload, FiUser, FiTruck, FiUsers, FiDollarSign } from 'react-icons/fi';
 
 const Reports = () => {
   const { t, i18n } = useTranslation();
@@ -16,6 +16,12 @@ const Reports = () => {
   const [selectedDelivery, setSelectedDelivery] = useState('');
   const [selectedResidentReport, setSelectedResidentReport] = useState('');
   const [generatingAll, setGeneratingAll] = useState(false);
+  const now = new Date();
+  const [billingMonth, setBillingMonth] = useState(now.getMonth() + 1);
+  const [billingYear, setBillingYear] = useState(now.getFullYear());
+  const [selectedResidentBilling, setSelectedResidentBilling] = useState('');
+  const [generatingBillingSingle, setGeneratingBillingSingle] = useState(false);
+  const [generatingBillingAll, setGeneratingBillingAll] = useState(false);
 
   useEffect(() => {
     residentsAPI.getAll().then(res => {
@@ -98,6 +104,48 @@ const Reports = () => {
     }
   };
 
+  const generateBillingStatementPDF = async () => {
+    if (!selectedResidentBilling) return;
+    setGeneratingBillingSingle(true);
+    try {
+      const response = await billingAPI.statementPDF(selectedResidentBilling, billingMonth, billingYear);
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      window.open(window.URL.createObjectURL(blob), '_blank');
+    } catch (error) {
+      toast.error(t('app.error'));
+    } finally {
+      setGeneratingBillingSingle(false);
+    }
+  };
+
+  const generateAllBillingStatementsPDF = async () => {
+    setGeneratingBillingAll(true);
+    try {
+      const sucursalParam = sucursalFilter ? { sucursal: sucursalFilter } : {};
+      const response = await billingAPI.allStatementsPDF(billingMonth, billingYear, sucursalParam);
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      window.open(window.URL.createObjectURL(blob), '_blank');
+    } catch (error) {
+      if (error.response?.data instanceof Blob) {
+        try {
+          const text = await error.response.data.text();
+          const json = JSON.parse(text);
+          toast.error(json.message || t('app.error'));
+        } catch {
+          toast.error(t('app.error'));
+        }
+      } else {
+        toast.error(error.response?.data?.message || t('app.error'));
+      }
+    } finally {
+      setGeneratingBillingAll(false);
+    }
+  };
+
+  const MONTHS_ES = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const MONTHS_EN = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+  const MONTHS = isEs ? MONTHS_ES : MONTHS_EN;
+
   return (
     <div>
       <div className="page-header">
@@ -141,6 +189,66 @@ const Reports = () => {
           <button className="btn btn-primary" onClick={generateAllResidentsPDF} disabled={generatingAll}>
             <FiDownload /> {generatingAll ? t('reports.generating') : t('reports.downloadAllPDF')}
           </button>
+        </div>
+      </div>
+
+      {/* Billing Statement Reports */}
+      <div className="card" style={{ marginBottom: 24 }}>
+        <div className="card-header">
+          <h3 className="card-title"><FiDollarSign style={{ marginRight: 8 }} /> {isEs ? 'Estados de Cuenta' : 'Account Statements'}</h3>
+        </div>
+        <div className="card-body">
+          {/* Month/Year selectors */}
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">{t('billing.selectMonth')}</label>
+              <select className="form-control" style={{ minWidth: 140 }} value={billingMonth} onChange={e => setBillingMonth(Number(e.target.value))}>
+                {MONTHS.slice(1).map((m, i) => (
+                  <option key={i + 1} value={i + 1}>{m}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">{t('billing.selectYear')}</label>
+              <select className="form-control" style={{ minWidth: 100 }} value={billingYear} onChange={e => setBillingYear(Number(e.target.value))}>
+                {[billingYear - 1, billingYear, billingYear + 1].map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+            {/* Single resident statement */}
+            <div>
+              <p style={{ color: '#666', fontSize: 14, marginBottom: 12 }}>
+                {isEs ? 'Estado de cuenta individual para el período seleccionado' : 'Individual account statement for the selected period'}
+              </p>
+              <div className="form-group">
+                <label className="form-label">{t('billing.selectResident')}</label>
+                <select className="form-control" value={selectedResidentBilling} onChange={e => setSelectedResidentBilling(e.target.value)}>
+                  <option value="">{t('billing.selectResident')}</option>
+                  {filteredResidents.map(r => (
+                    <option key={r._id} value={r._id}>
+                      {r.firstName} {r.lastName} {r.sucursal ? `(${r.sucursal})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button className="btn btn-primary" onClick={generateBillingStatementPDF} disabled={!selectedResidentBilling || generatingBillingSingle}>
+                <FiDownload /> {generatingBillingSingle ? t('reports.generating') : t('billing.generatePDF')}
+              </button>
+            </div>
+            {/* All residents statements */}
+            <div>
+              <p style={{ color: '#666', fontSize: 14, marginBottom: 12 }}>
+                {isEs ? 'Todos los estados de cuenta del período (un residente por página)' : 'All account statements for the period (one resident per page)'}
+                {sucursalFilter && <strong> ({sucursalFilter})</strong>}
+              </p>
+              <button className="btn btn-primary" onClick={generateAllBillingStatementsPDF} disabled={generatingBillingAll} style={{ marginTop: 40 }}>
+                <FiDownload /> {generatingBillingAll ? t('reports.generating') : t('billing.generateAllPDF')}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 

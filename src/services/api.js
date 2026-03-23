@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://medicalproject-backend-production.up.railway.app/api';
+export const UPLOADS_BASE_URL = API_BASE_URL.replace('/api', '');
 
 const api = axios.create({
   baseURL: API_BASE_URL
@@ -114,6 +115,46 @@ export const settingsAPI = {
   addBranch: (name) => api.post('/settings/branches', { name }),
   updateBranch: (oldName, newName) => api.put('/settings/branches', { oldName, newName }),
   deleteBranch: (name) => api.delete(`/settings/branches/${encodeURIComponent(name)}`)
+};
+
+// Billing
+export const billingAPI = {
+  // Config
+  getAllConfigs: () => api.get('/billing/configs'),
+  getConfig: (residentId) => api.get(`/billing/config/${residentId}`),
+  upsertConfig: (residentId, data) => api.post(`/billing/config/${residentId}`, data),
+
+  // Expenses
+  getExpenses: (residentId, params) => api.get(`/billing/expenses/${residentId}`, { params }),
+  createExpense: (residentId, data) => api.post(`/billing/expenses/${residentId}`, data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  updateExpense: (expenseId, data) => api.put(`/billing/expenses/${expenseId}`, data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  deleteExpense: (expenseId) => api.delete(`/billing/expenses/${expenseId}`),
+
+  // Statements
+  getStatements: (residentId, params) => api.get(`/billing/statements/${residentId}`, { params }),
+  getStatement: (residentId, month, year) => api.get(`/billing/statements/${residentId}/${month}/${year}`),
+  createStatement: (residentId, data) => api.post(`/billing/statements/${residentId}`, data),
+  updateStatement: (statementId, data) => api.put(`/billing/statements/${statementId}`, data),
+
+  // Payments
+  getPayments: (statementId) => api.get(`/billing/payments/${statementId}`),
+  createPayment: (statementId, data) => api.post(`/billing/payments/${statementId}`, data),
+  deletePayment: (paymentId) => api.delete(`/billing/payments/${paymentId}`),
+
+  // Aggregated
+  getDebtors: (params) => api.get('/billing/debtors', { params }),
+  getSummary: (params) => api.get('/billing/summary', { params }),
+  getAdjustmentAlerts: () => api.get('/billing/adjustment-alerts'),
+
+  // PDFs
+  statementPDF: (residentId, month, year) =>
+    api.get(`/billing/pdf/statement/${residentId}/${month}/${year}`, { responseType: 'blob' }),
+  allStatementsPDF: (month, year, params = {}) =>
+    api.get(`/billing/pdf/statements-all/${month}/${year}`, { responseType: 'blob', params })
 };
 
 // Reports

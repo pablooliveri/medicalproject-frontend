@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useParams, Link } from 'react-router-dom';
-import { residentsAPI, residentMedicationsAPI, medicationsAPI, reportsAPI, medicationHistoryAPI } from '../services/api';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { residentsAPI, residentMedicationsAPI, medicationsAPI, reportsAPI, medicationHistoryAPI, billingAPI } from '../services/api';
 import { toast } from 'react-toastify';
 import Modal from '../components/common/Modal';
-import { FiArrowLeft, FiPlus, FiEdit, FiXCircle, FiCheckCircle, FiFileText, FiPackage, FiClock, FiChevronLeft, FiChevronRight, FiCalendar } from 'react-icons/fi';
+import { FiArrowLeft, FiPlus, FiEdit, FiXCircle, FiCheckCircle, FiFileText, FiPackage, FiClock, FiChevronLeft, FiChevronRight, FiCalendar, FiDollarSign } from 'react-icons/fi';
 import SortableHeader from '../components/common/SortableHeader';
 import useSortableTable from '../hooks/useSortableTable';
 
@@ -46,7 +46,9 @@ const ResidentDetail = () => {
   const { t, i18n } = useTranslation();
   const isEs = i18n.language === 'es';
   const { id } = useParams();
+  const navigate = useNavigate();
   const [resident, setResident] = useState(null);
+  const [billingSummary, setBillingSummary] = useState(null);
   const [activeMeds, setActiveMeds] = useState([]);
   const [inactiveMeds, setInactiveMeds] = useState([]);
   const [allMedications, setAllMedications] = useState([]);
@@ -100,6 +102,15 @@ const ResidentDetail = () => {
         }
       } catch (e) {
         // History may not exist yet
+      }
+
+      // Load billing summary for current month
+      try {
+        const now = new Date();
+        const stmtRes = await billingAPI.getStatement(id, now.getMonth() + 1, now.getFullYear());
+        setBillingSummary(stmtRes.data);
+      } catch (e) {
+        setBillingSummary(null);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -312,6 +323,9 @@ const ResidentDetail = () => {
         </button>
         <button className={`tab ${activeTab === 'stock' ? 'active' : ''}`} onClick={() => setActiveTab('stock')}>
           <FiPackage style={{ marginRight: 4 }} /> Stock ({activeMeds.length})
+        </button>
+        <button className={`tab ${activeTab === 'billing' ? 'active' : ''}`} onClick={() => setActiveTab('billing')}>
+          <FiDollarSign style={{ marginRight: 4 }} /> {isEs ? 'Facturación' : 'Billing'}
         </button>
       </div>
 
@@ -591,6 +605,40 @@ const ResidentDetail = () => {
                   </tbody>
                 </table>
               </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* BILLING TAB */}
+      {activeTab === 'billing' && (
+        <div className="card">
+          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 className="card-title"><FiDollarSign style={{ marginRight: 6 }} />{isEs ? 'Facturación' : 'Billing'}</h3>
+            <button className="btn btn-primary" onClick={() => navigate(`/billing/${id}`)}>
+              {isEs ? 'Ver detalle completo' : 'View full detail'}
+            </button>
+          </div>
+          <div className="card-body">
+            {billingSummary ? (
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <div className="stat-value">${Number(billingSummary.monthlyFee || 0).toLocaleString('es-UY')}</div>
+                  <div className="stat-label">{isEs ? 'Cuota mensual' : 'Monthly fee'}</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-value">${Number(billingSummary.totalAmount || 0).toLocaleString('es-UY')}</div>
+                  <div className="stat-label">{isEs ? 'Total a pagar' : 'Total due'}</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-value" style={{ color: (billingSummary.balance || 0) > 0 ? '#dc3545' : '#28a745' }}>
+                    ${Number(billingSummary.balance || 0).toLocaleString('es-UY')}
+                  </div>
+                  <div className="stat-label">{isEs ? 'Saldo' : 'Balance'}</div>
+                </div>
+              </div>
+            ) : (
+              <p style={{ color: '#666' }}>{isEs ? 'Sin estado de cuenta este mes.' : 'No statement for this month.'}</p>
             )}
           </div>
         </div>

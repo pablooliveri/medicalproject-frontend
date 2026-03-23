@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { FiHome, FiUsers, FiPackage, FiTruck, FiBarChart2, FiFileText, FiSettings } from 'react-icons/fi';
+import { FiHome, FiUsers, FiPackage, FiTruck, FiBarChart2, FiFileText, FiDollarSign, FiSettings } from 'react-icons/fi';
 
 const Sidebar = () => {
   const { t } = useTranslation();
@@ -12,6 +12,7 @@ const Sidebar = () => {
     { path: '/deliveries', icon: <FiTruck />, label: t('nav.deliveries') },
     { path: '/stock', icon: <FiBarChart2 />, label: t('nav.stock') },
     { path: '/reports', icon: <FiFileText />, label: t('nav.reports') },
+    { path: '/billing', icon: <FiDollarSign />, label: t('nav.billing') },
     { path: '/settings', icon: <FiSettings />, label: t('nav.settings') },
   ];
 

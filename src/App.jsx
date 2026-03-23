@@ -16,6 +16,8 @@ import NewDelivery from './pages/NewDelivery';
 import EditDelivery from './pages/EditDelivery';
 import StockManagement from './pages/StockManagement';
 import Reports from './pages/Reports';
+import Billing from './pages/Billing';
+import BillingDetail from './pages/BillingDetail';
 import Settings from './pages/Settings';
 import './App.css';
 
@@ -98,6 +100,20 @@ const AppRoutes = () => {
         <ProtectedRoute>
           <Layout>
             <Reports />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/billing" element={
+        <ProtectedRoute>
+          <Layout>
+            <Billing />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/billing/:residentId" element={
+        <ProtectedRoute>
+          <Layout>
+            <BillingDetail />
           </Layout>
         </ProtectedRoute>
       } />
