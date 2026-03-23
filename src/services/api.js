@@ -156,7 +156,11 @@ export const billingAPI = {
   statementPDF: (residentId, month, year) =>
     api.get(`/billing/pdf/statement/${residentId}/${month}/${year}`, { responseType: 'blob' }),
   allStatementsPDF: (month, year, params = {}) =>
-    api.get(`/billing/pdf/statements-all/${month}/${year}`, { responseType: 'blob', params })
+    api.get(`/billing/pdf/statements-all/${month}/${year}`, { responseType: 'blob', params }),
+  summaryPDF: (month, year, params = {}) =>
+    api.get(`/billing/pdf/summary/${month}/${year}`, { responseType: 'blob', params }),
+  debtorsPDF: (month, year, params = {}) =>
+    api.get(`/billing/pdf/debtors/${month}/${year}`, { responseType: 'blob', params })
 };
 
 // Reports

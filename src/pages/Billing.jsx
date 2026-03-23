@@ -38,6 +38,8 @@ export default function Billing() {
   const [allConfigs, setAllConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [generatingSummaryPDF, setGeneratingSummaryPDF] = useState(false);
+  const [generatingDebtorsPDF, setGeneratingDebtorsPDF] = useState(false);
 
   // Search state
   const [debtorSearch, setDebtorSearch] = useState('');
@@ -129,23 +131,32 @@ export default function Billing() {
     }));
   };
 
-  const generateAllPDF = async () => {
-    setGeneratingPDF(true);
+  const downloadPDF = async (apiFn, filename, setLoading) => {
+    setLoading(true);
     try {
       const params = sucursal ? { sucursal } : {};
-      const res = await billingAPI.allStatementsPDF(month, year, params);
+      const res = await apiFn(month, year, params);
       const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const a = document.createElement('a');
       a.href = url;
-      a.download = `estados-cuenta-${MONTHS[month - 1]}-${year}.pdf`;
+      a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
       toast.error(t('app.error'));
     } finally {
-      setGeneratingPDF(false);
+      setLoading(false);
     }
   };
+
+  const generateAllPDF = () =>
+    downloadPDF(billingAPI.allStatementsPDF, `estados-cuenta-${MONTHS[month - 1]}-${year}.pdf`, setGeneratingPDF);
+
+  const generateSummaryPDF = () =>
+    downloadPDF(billingAPI.summaryPDF, `libro-ventas-${MONTHS[month - 1]}-${year}.pdf`, setGeneratingSummaryPDF);
+
+  const generateDebtorsPDF = () =>
+    downloadPDF(billingAPI.debtorsPDF, `deudores-${MONTHS[month - 1]}-${year}.pdf`, setGeneratingDebtorsPDF);
 
   const statusClass = { paid: 'badge-success', partial: 'badge-warning', pending: 'badge-danger' };
   const statusLabel = { paid: t('billing.status.paid'), partial: t('billing.status.partial'), pending: t('billing.status.pending') };
@@ -241,7 +252,12 @@ export default function Billing() {
             <div className="card">
               <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 className="card-title"><FiAlertCircle style={{ marginRight: 6, color: '#dc3545' }} />{t('billing.debtors')}</h3>
-                <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('debtors')}>{t('app.view')}</button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="btn btn-secondary btn-sm" onClick={generateSummaryPDF} disabled={generatingSummaryPDF}>
+                    <FiDownload style={{ marginRight: 4 }} />{generatingSummaryPDF ? '...' : 'Libro de ventas'}
+                  </button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('debtors')}>{t('app.view')}</button>
+                </div>
               </div>
               <div className="card-body">
                 <div className="table-container">
@@ -279,8 +295,16 @@ export default function Billing() {
       {/* ── TAB: Debtors ── */}
       {activeTab === 'debtors' && (
         <div className="card">
-          <div className="card-header">
+          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 className="card-title">{t('billing.debtors')} — {MONTHS[month - 1]} {year}</h3>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-secondary btn-sm" onClick={generateSummaryPDF} disabled={generatingSummaryPDF}>
+                <FiDownload style={{ marginRight: 4 }} />{generatingSummaryPDF ? '...' : 'Libro de ventas'}
+              </button>
+              <button className="btn btn-secondary btn-sm" onClick={generateDebtorsPDF} disabled={generatingDebtorsPDF}>
+                <FiDownload style={{ marginRight: 4 }} />{generatingDebtorsPDF ? '...' : 'PDF Deudores'}
+              </button>
+            </div>
           </div>
           <div className="card-body">
             {/* Search */}
