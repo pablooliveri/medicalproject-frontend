@@ -139,6 +139,7 @@ export const billingAPI = {
   getStatement: (residentId, month, year) => api.get(`/billing/statements/${residentId}/${month}/${year}`),
   createStatement: (residentId, data) => api.post(`/billing/statements/${residentId}`, data),
   updateStatement: (statementId, data) => api.put(`/billing/statements/${statementId}`, data),
+  toggleLock: (statementId) => api.put(`/billing/statements/${statementId}/toggle-lock`),
 
   // Payments
   getPayments: (statementId) => api.get(`/billing/payments/${statementId}`),

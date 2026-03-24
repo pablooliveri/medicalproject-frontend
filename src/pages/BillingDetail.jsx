@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import {
   FiArrowLeft, FiDollarSign, FiPlus, FiEdit2, FiTrash2,
-  FiDownload, FiChevronLeft, FiChevronRight, FiCamera, FiSave, FiSearch
+  FiDownload, FiChevronLeft, FiChevronRight, FiCamera, FiSave, FiSearch,
+  FiLock, FiUnlock
 } from 'react-icons/fi';
 import { billingAPI, residentsAPI, UPLOADS_BASE_URL } from '../services/api';
 import Modal from '../components/common/Modal';
@@ -240,6 +241,21 @@ export default function BillingDetail() {
     }
   };
 
+  // Toggle lock
+  const toggleLock = async () => {
+    if (!statement?._id) return toast.error(isEs ? 'Primero genere el estado del mes' : 'Generate the statement first');
+    try {
+      const res = await billingAPI.toggleLock(statement._id);
+      setStatement(prev => ({ ...prev, locked: res.data.locked }));
+      toast.success(res.data.locked
+        ? (isEs ? 'Mes cerrado — no se pueden agregar gastos' : 'Month locked')
+        : (isEs ? 'Mes desbloqueado' : 'Month unlocked')
+      );
+    } catch (error) {
+      toast.error(error.response?.data?.message || t('app.error'));
+    }
+  };
+
   // Config save
   const saveConfig = async () => {
     try {
@@ -359,6 +375,8 @@ export default function BillingDetail() {
   const balance = totalAmount - amountPaid;
   const status = balance <= 0 ? 'paid' : amountPaid > 0 ? 'partial' : 'pending';
 
+  const isLocked = statement?.locked === true;
+
   const statusClass = { paid: 'badge-success', partial: 'badge-warning', pending: 'badge-danger' };
   const statusLabel = { paid: t('billing.status.paid'), partial: t('billing.status.partial'), pending: t('billing.status.pending') };
 
@@ -410,6 +428,16 @@ export default function BillingDetail() {
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <span className={`badge ${statusClass[status]}`}>{statusLabel[status]}</span>
+                {statement?._id && (
+                  <button
+                    className={`btn btn-sm ${isLocked ? 'btn-warning' : 'btn-secondary'}`}
+                    onClick={toggleLock}
+                    title={isLocked ? (isEs ? 'Desbloquear mes' : 'Unlock month') : (isEs ? 'Cerrar mes' : 'Lock month')}
+                  >
+                    {isLocked ? <FiLock style={{ marginRight: 4 }} /> : <FiUnlock style={{ marginRight: 4 }} />}
+                    {isLocked ? (isEs ? 'Cerrado' : 'Locked') : (isEs ? 'Cerrar mes' : 'Lock')}
+                  </button>
+                )}
                 <button className="btn btn-primary" onClick={generatePDF} disabled={generatingPDF}>
                   <FiDownload style={{ marginRight: 4 }} />
                   {generatingPDF ? t('reports.generating') : t('billing.generatePDF')}
@@ -417,6 +445,21 @@ export default function BillingDetail() {
               </div>
             </div>
           </div>
+
+          {/* Locked banner */}
+          {isLocked && (
+            <div className="card" style={{ marginBottom: 16, borderLeft: '4px solid #f59e0b', background: '#fffbeb' }}>
+              <div className="card-body" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <FiLock style={{ color: '#92400e', fontSize: 18 }} />
+                <span style={{ color: '#92400e', fontWeight: 600 }}>
+                  {isEs ? 'Este mes está cerrado. No se pueden agregar, editar ni eliminar gastos.' : 'This month is locked. Expenses cannot be modified.'}
+                </span>
+                <button className="btn btn-warning btn-sm" style={{ marginLeft: 'auto' }} onClick={toggleLock}>
+                  <FiUnlock style={{ marginRight: 4 }} />{isEs ? 'Desbloquear' : 'Unlock'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Adjustment alert */}
           {adjustmentAlert && (
@@ -473,11 +516,11 @@ export default function BillingDetail() {
               <h3 className="card-title">{t('billing.expenses')}</h3>
               <div style={{ display: 'flex', gap: 8 }}>
                 {recurringExpenses.length > 0 && (
-                  <button className="btn btn-secondary btn-sm" onClick={loadRecurring} disabled={loadingRecurring}>
+                  <button className="btn btn-secondary btn-sm" onClick={loadRecurring} disabled={loadingRecurring || isLocked}>
                     {loadingRecurring ? '...' : (isEs ? '↺ Cargar Recurrentes' : '↺ Load Recurring')}
                   </button>
                 )}
-                <button className="btn btn-primary btn-sm" onClick={openAddExpense}>
+                <button className="btn btn-primary btn-sm" onClick={openAddExpense} disabled={isLocked}>
                   <FiPlus style={{ marginRight: 4 }} />{t('billing.addExpense')}
                 </button>
               </div>
@@ -528,8 +571,8 @@ export default function BillingDetail() {
                             <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatCurrency(exp.amount)}</td>
                             <td>
                               <div style={{ display: 'flex', gap: 6 }}>
-                                <button className="btn btn-secondary btn-sm" onClick={() => openEditExpense(exp)}><FiEdit2 /></button>
-                                <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete({ type: 'expense', id: exp._id })}><FiTrash2 /></button>
+                                <button className="btn btn-secondary btn-sm" onClick={() => openEditExpense(exp)} disabled={isLocked}><FiEdit2 /></button>
+                                <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete({ type: 'expense', id: exp._id })} disabled={isLocked}><FiTrash2 /></button>
                               </div>
                             </td>
                           </tr>
