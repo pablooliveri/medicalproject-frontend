@@ -150,6 +150,7 @@ export const billingAPI = {
   // Aggregated
   getDebtors: (params) => api.get('/billing/debtors', { params }),
   getSummary: (params) => api.get('/billing/summary', { params }),
+  getStatementsMonthly: (params) => api.get('/billing/statements-monthly', { params }),
   getAdjustmentAlerts: () => api.get('/billing/adjustment-alerts'),
 
   // PDFs

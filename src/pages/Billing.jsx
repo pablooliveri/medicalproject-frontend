@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
+import * as XLSX from 'xlsx';
 import {
   FiDollarSign, FiAlertCircle, FiUsers, FiTrendingUp, FiEdit2, FiDownload, FiEye, FiSearch
 } from 'react-icons/fi';
@@ -158,6 +159,44 @@ export default function Billing() {
   const generateDebtorsPDF = () =>
     downloadPDF(billingAPI.debtorsPDF, `deudores-${MONTHS[month - 1]}-${year}.pdf`, setGeneratingDebtorsPDF);
 
+  const exportSummaryExcel = async () => {
+    try {
+      const params = { month, year, ...(sucursal ? { sucursal } : {}) };
+      const res = await billingAPI.getStatementsMonthly(params);
+      const statements = res.data;
+
+      const rows = statements.map(s => ({
+        'Residente': `${s.resident.firstName} ${s.resident.lastName}`,
+        ...(sucursal ? {} : { 'Sucursal': s.resident.sucursal || '' }),
+        'Mensualidad': Math.round(s.monthlyFee || 0),
+        'Gastos': Math.round(s.totalExpenses || 0),
+        'Total': Math.round(s.totalAmount || 0),
+        'Pagado': Math.round(s.amountPaid || 0),
+        'Saldo': Math.round(s.balance || 0),
+        'Estado': s.status === 'paid' ? 'Pagado' : s.status === 'partial' ? 'Parcial' : 'Pendiente'
+      }));
+
+      // Totals row
+      rows.push({
+        'Residente': `TOTALES (${statements.length})`,
+        ...(sucursal ? {} : { 'Sucursal': '' }),
+        'Mensualidad': statements.reduce((a, s) => a + Math.round(s.monthlyFee || 0), 0),
+        'Gastos':      statements.reduce((a, s) => a + Math.round(s.totalExpenses || 0), 0),
+        'Total':       statements.reduce((a, s) => a + Math.round(s.totalAmount || 0), 0),
+        'Pagado':      statements.reduce((a, s) => a + Math.round(s.amountPaid || 0), 0),
+        'Saldo':       statements.reduce((a, s) => a + Math.round(s.balance || 0), 0),
+        'Estado': ''
+      });
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, `${MONTHS[month - 1]} ${year}`);
+      XLSX.writeFile(wb, `libro-ventas-${MONTHS[month - 1]}-${year}.xlsx`);
+    } catch {
+      toast.error(t('app.error'));
+    }
+  };
+
   const statusClass = { paid: 'badge-success', partial: 'badge-warning', pending: 'badge-danger' };
   const statusLabel = { paid: t('billing.status.paid'), partial: t('billing.status.partial'), pending: t('billing.status.pending') };
 
@@ -243,8 +282,15 @@ export default function Billing() {
             </div>
             <div className="stat-card">
               <FiUsers className="stat-icon" />
-              <div className="stat-value">{summary?.residentCount || 0}</div>
-              <div className="stat-label">{t('billing.residentCount')}</div>
+              <div className="stat-value">
+                <span style={{ color: summary?.residentCount === summary?.activeResidentCount ? '#28a745' : '#ffc107' }}>
+                  {summary?.residentCount || 0}
+                </span>
+                <span style={{ fontSize: '0.6em', color: '#888', marginLeft: 4 }}>
+                  / {summary?.activeResidentCount || 0}
+                </span>
+              </div>
+              <div className="stat-label">{isEs ? 'Estados generados' : 'Statements generated'}</div>
             </div>
           </div>
 
@@ -254,7 +300,10 @@ export default function Billing() {
                 <h3 className="card-title"><FiAlertCircle style={{ marginRight: 6, color: '#dc3545' }} />{t('billing.debtors')}</h3>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button className="btn btn-secondary btn-sm" onClick={generateSummaryPDF} disabled={generatingSummaryPDF}>
-                    <FiDownload style={{ marginRight: 4 }} />{generatingSummaryPDF ? '...' : 'Libro de ventas'}
+                    <FiDownload style={{ marginRight: 4 }} />{generatingSummaryPDF ? '...' : 'PDF'}
+                  </button>
+                  <button className="btn btn-secondary btn-sm" onClick={exportSummaryExcel}>
+                    <FiDownload style={{ marginRight: 4 }} />Excel
                   </button>
                   <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('debtors')}>{t('app.view')}</button>
                 </div>
@@ -299,10 +348,13 @@ export default function Billing() {
             <h3 className="card-title">{t('billing.debtors')} — {MONTHS[month - 1]} {year}</h3>
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn btn-secondary btn-sm" onClick={generateSummaryPDF} disabled={generatingSummaryPDF}>
-                <FiDownload style={{ marginRight: 4 }} />{generatingSummaryPDF ? '...' : 'Libro de ventas'}
+                <FiDownload style={{ marginRight: 4 }} />{generatingSummaryPDF ? '...' : 'Libro PDF'}
+              </button>
+              <button className="btn btn-secondary btn-sm" onClick={exportSummaryExcel}>
+                <FiDownload style={{ marginRight: 4 }} />Libro Excel
               </button>
               <button className="btn btn-secondary btn-sm" onClick={generateDebtorsPDF} disabled={generatingDebtorsPDF}>
-                <FiDownload style={{ marginRight: 4 }} />{generatingDebtorsPDF ? '...' : 'PDF Deudores'}
+                <FiDownload style={{ marginRight: 4 }} />{generatingDebtorsPDF ? '...' : 'Deudores PDF'}
               </button>
             </div>
           </div>
