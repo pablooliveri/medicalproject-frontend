@@ -7,7 +7,7 @@ import {
   FiDownload, FiChevronLeft, FiChevronRight, FiCamera, FiSave, FiSearch,
   FiLock, FiUnlock
 } from 'react-icons/fi';
-import { billingAPI, residentsAPI, UPLOADS_BASE_URL } from '../services/api';
+import { billingAPI, residentsAPI, resolveFileUrl } from '../services/api';
 import Modal from '../components/common/Modal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import useSortableTable from '../hooks/useSortableTable';
@@ -562,7 +562,7 @@ export default function BillingDetail() {
                                 <FiCamera
                                   style={{ marginLeft: 6, color: '#7c3aed', verticalAlign: 'middle', cursor: 'pointer' }}
                                   title="Ver foto"
-                                  onClick={e => { e.stopPropagation(); setLightboxUrl(`${UPLOADS_BASE_URL}${exp.photo}`); }}
+                                  onClick={e => { e.stopPropagation(); setLightboxUrl(resolveFileUrl(exp.photo)); }}
                                 />
                               )}
                             </td>
@@ -901,7 +901,7 @@ export default function BillingDetail() {
             {!expensePhoto && editingExpense?.photo && (
               <div style={{ marginTop: 10 }}>
                 <img
-                  src={`${UPLOADS_BASE_URL}${editingExpense.photo}`}
+                  src={resolveFileUrl(editingExpense.photo)}
                   alt="foto actual"
                   style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, objectFit: 'contain', border: '1px solid #444' }}
                 />

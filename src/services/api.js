@@ -2,6 +2,12 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://medicalproject-backend-production.up.railway.app/api';
 export const UPLOADS_BASE_URL = API_BASE_URL.replace('/api', '');
+// Returns the full URL for an uploaded file (handles both Cloudinary URLs and legacy local paths)
+export const resolveFileUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  return `${UPLOADS_BASE_URL}${path}`;
+};
 
 const api = axios.create({
   baseURL: API_BASE_URL
