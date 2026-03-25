@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import {
-  FiDollarSign, FiAlertCircle, FiUsers, FiTrendingUp, FiEdit2, FiDownload, FiEye, FiSearch
+  FiDollarSign, FiAlertCircle, FiUsers, FiTrendingUp, FiEdit2, FiDownload, FiEye, FiSearch,
+  FiLock, FiUnlock
 } from 'react-icons/fi';
 import { billingAPI, settingsAPI } from '../services/api';
 import Modal from '../components/common/Modal';
@@ -41,6 +42,7 @@ export default function Billing() {
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [generatingSummaryPDF, setGeneratingSummaryPDF] = useState(false);
   const [generatingDebtorsPDF, setGeneratingDebtorsPDF] = useState(false);
+  const [lockingMonth, setLockingMonth] = useState(false);
 
   // Search state
   const [debtorSearch, setDebtorSearch] = useState('');
@@ -159,6 +161,26 @@ export default function Billing() {
   const generateDebtorsPDF = () =>
     downloadPDF(billingAPI.debtorsPDF, `deudores-${MONTHS[month - 1]}-${year}.pdf`, setGeneratingDebtorsPDF);
 
+  const handleLockMonth = async (lock) => {
+    const action = lock ? (isEs ? 'cerrar' : 'lock') : (isEs ? 'abrir' : 'unlock');
+    if (!window.confirm(isEs
+      ? `¿Confirmar ${action} todos los estados de ${MONTHS[month - 1]} ${year}${sucursal ? ` (${sucursal})` : ''}?`
+      : `Confirm ${action} all statements for ${MONTHS[month - 1]} ${year}?`
+    )) return;
+    setLockingMonth(true);
+    try {
+      const res = await billingAPI.lockMonth({ month, year, locked: lock, ...(sucursal ? { sucursal } : {}) });
+      toast.success(isEs
+        ? `${res.data.updated} estado(s) ${lock ? 'cerrados' : 'abiertos'}`
+        : `${res.data.updated} statement(s) ${lock ? 'locked' : 'unlocked'}`
+      );
+    } catch {
+      toast.error(t('app.error'));
+    } finally {
+      setLockingMonth(false);
+    }
+  };
+
   const exportSummaryExcel = async () => {
     try {
       const params = { month, year, ...(sucursal ? { sucursal } : {}) };
@@ -206,10 +228,18 @@ export default function Billing() {
     <div className="page-container">
       <div className="page-header">
         <h1 className="page-title"><FiDollarSign style={{ marginRight: 8 }} />{t('billing.title')}</h1>
-        <button className="btn btn-primary" onClick={generateAllPDF} disabled={generatingPDF}>
-          <FiDownload style={{ marginRight: 4 }} />
-          {generatingPDF ? t('reports.generating') : t('billing.generateAllPDF')}
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-warning" onClick={() => handleLockMonth(true)} disabled={lockingMonth} title={isEs ? 'Cerrar todos los estados del mes' : 'Lock all statements'}>
+            <FiLock style={{ marginRight: 4 }} />{isEs ? 'Cerrar mes' : 'Lock month'}
+          </button>
+          <button className="btn btn-secondary" onClick={() => handleLockMonth(false)} disabled={lockingMonth} title={isEs ? 'Abrir todos los estados del mes' : 'Unlock all statements'}>
+            <FiUnlock style={{ marginRight: 4 }} />{isEs ? 'Abrir mes' : 'Unlock month'}
+          </button>
+          <button className="btn btn-primary" onClick={generateAllPDF} disabled={generatingPDF}>
+            <FiDownload style={{ marginRight: 4 }} />
+            {generatingPDF ? t('reports.generating') : t('billing.generateAllPDF')}
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
