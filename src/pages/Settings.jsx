@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { settingsAPI } from '../services/api';
+import { settingsAPI, resolveFileUrl } from '../services/api';
 import { toast } from 'react-toastify';
 import { FiSave, FiUpload, FiTrash2, FiImage, FiPlus, FiEdit, FiMapPin } from 'react-icons/fi';
-
-const API_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://medicalproject-backend-production.up.railway.app';
 
 const Settings = () => {
   const { t, i18n } = useTranslation();
@@ -34,7 +32,7 @@ const Settings = () => {
         language: data.language || 'en'
       });
       setBranches(data.branches || []);
-      if (data.logo) setLogoPreview(`${API_URL}${data.logo}`);
+      if (data.logo) setLogoPreview(resolveFileUrl(data.logo));
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -64,7 +62,7 @@ const Settings = () => {
       const formData = new FormData();
       formData.append('logo', logo);
       const { data } = await settingsAPI.uploadLogo(formData);
-      setLogoPreview(`${API_URL}${data.logo}`);
+      setLogoPreview(resolveFileUrl(data.logo));
       setLogo(null);
       toast.success(t('settings.logoUploaded'));
     } catch (error) {

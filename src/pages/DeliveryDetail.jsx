@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { deliveriesAPI, reportsAPI } from '../services/api';
+import { deliveriesAPI, reportsAPI, resolveFileUrl } from '../services/api';
 import { toast } from 'react-toastify';
 import { FiArrowLeft, FiFileText, FiImage, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import SortableHeader from '../components/common/SortableHeader';
 import useSortableTable from '../hooks/useSortableTable';
-
-const API_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://medicalproject-backend-production.up.railway.app';
 
 const DeliveryDetail = () => {
   const { t } = useTranslation();
@@ -106,7 +104,7 @@ const DeliveryDetail = () => {
             <div className="photo-gallery">
               {delivery.photos.map((photo, i) => (
                 <div className="photo-item" key={i}>
-                  <img src={`${API_URL}${photo}`} alt={`Photo ${i + 1}`} />
+                  <img src={resolveFileUrl(photo)} alt={`Photo ${i + 1}`} />
                 </div>
               ))}
             </div>

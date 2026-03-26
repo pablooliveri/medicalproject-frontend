@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { residentsAPI, residentMedicationsAPI, deliveriesAPI } from '../services/api';
+import { residentsAPI, residentMedicationsAPI, deliveriesAPI, resolveFileUrl } from '../services/api';
 import { toast } from 'react-toastify';
 import { FiPlus, FiTrash2, FiUpload, FiSave, FiArrowLeft, FiImage } from 'react-icons/fi';
-
-const API_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://medicalproject-backend-production.up.railway.app';
 
 const EditDelivery = () => {
   const { t } = useTranslation();
@@ -18,7 +16,8 @@ const EditDelivery = () => {
   const [deliveryDate, setDeliveryDate] = useState('');
   const [items, setItems] = useState([{ residentMedication: '', medication: '', quantity: '' }]);
   const [existingPhotos, setExistingPhotos] = useState([]);
-  const [newPhotos, setNewPhotos] = useState([]);
+  const [newPhoto, setNewPhoto] = useState(null);
+  const [newPhotoPreview, setNewPhotoPreview] = useState(null);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
@@ -98,8 +97,8 @@ const EditDelivery = () => {
       formData.append('items', JSON.stringify(items.filter(i => i.residentMedication && i.quantity)));
       formData.append('existingPhotos', JSON.stringify(existingPhotos));
 
-      for (const photo of newPhotos) {
-        formData.append('photos', photo);
+      if (newPhoto) {
+        formData.append('photos', newPhoto);
       }
 
       await deliveriesAPI.update(id, formData);
@@ -184,7 +183,7 @@ const EditDelivery = () => {
               <div className="photo-gallery">
                 {existingPhotos.map((photo, i) => (
                   <div className="photo-item" key={i} style={{ position: 'relative' }}>
-                    <img src={`${API_URL}${photo}`} alt={`Photo ${i + 1}`} />
+                    <img src={resolveFileUrl(photo)} alt={`Photo ${i + 1}`} />
                     <button
                       type="button"
                       className="btn btn-sm btn-danger"
@@ -200,17 +199,27 @@ const EditDelivery = () => {
           </div>
         )}
 
-        {/* New Photos */}
+        {/* New Photo */}
         <div className="card" style={{ marginBottom: 24 }}>
-          <div className="card-header"><h3 className="card-title">{t('deliveries.addPhotos')}</h3></div>
+          <div className="card-header"><h3 className="card-title"><FiImage style={{ marginRight: 8 }} /> {t('deliveries.addPhotos')}</h3></div>
           <div className="card-body">
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={(e) => setNewPhotos(Array.from(e.target.files))}
-            />
-            {newPhotos.length > 0 && <p style={{ marginTop: 8, fontSize: 13, color: 'var(--text-secondary)' }}>{newPhotos.length} {t('deliveries.photos').toLowerCase()}</p>}
+            {newPhotoPreview && (
+              <div style={{ marginBottom: 16 }}>
+                <img src={newPhotoPreview} alt="Preview" style={{ maxHeight: 150, borderRadius: 8, border: '1px solid var(--border)' }} />
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <input type="file" accept="image/*" onChange={(e) => {
+                const file = e.target.files[0];
+                setNewPhoto(file || null);
+                setNewPhotoPreview(file ? URL.createObjectURL(file) : null);
+              }} />
+              {newPhotoPreview && (
+                <button type="button" className="btn btn-danger btn-sm" onClick={() => { setNewPhoto(null); setNewPhotoPreview(null); }}>
+                  <FiTrash2 /> {t('app.delete')}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

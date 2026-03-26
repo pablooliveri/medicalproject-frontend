@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
 import { residentsAPI, residentMedicationsAPI, deliveriesAPI } from '../services/api';
 import { toast } from 'react-toastify';
-import { FiPlus, FiTrash2, FiUpload, FiSave, FiArrowLeft } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiUpload, FiSave, FiArrowLeft, FiImage } from 'react-icons/fi';
 
 const NewDelivery = () => {
   const { t } = useTranslation();
@@ -14,7 +14,8 @@ const NewDelivery = () => {
   const [deliveredBy, setDeliveredBy] = useState('');
   const [deliveryDate, setDeliveryDate] = useState(new Date().toISOString().split('T')[0]);
   const [items, setItems] = useState([{ residentMedication: '', medication: '', quantity: '' }]);
-  const [photos, setPhotos] = useState([]);
+  const [photo, setPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -68,7 +69,7 @@ const NewDelivery = () => {
       formData.append('notes', notes);
       formData.append('items', JSON.stringify(items.filter(i => i.residentMedication && i.quantity)));
 
-      for (const photo of photos) {
+      if (photo) {
         formData.append('photos', photo);
       }
 
@@ -147,17 +148,27 @@ const NewDelivery = () => {
           </div>
         </div>
 
-        {/* Photos */}
+        {/* Photo */}
         <div className="card" style={{ marginBottom: 24 }}>
-          <div className="card-header"><h3 className="card-title">{t('deliveries.photos')}</h3></div>
+          <div className="card-header"><h3 className="card-title"><FiImage style={{ marginRight: 8 }} /> {t('deliveries.photos')}</h3></div>
           <div className="card-body">
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={(e) => setPhotos(Array.from(e.target.files))}
-            />
-            {photos.length > 0 && <p style={{ marginTop: 8, fontSize: 13, color: 'var(--text-secondary)' }}>{photos.length} {t('deliveries.photos').toLowerCase()}</p>}
+            {photoPreview && (
+              <div style={{ marginBottom: 16 }}>
+                <img src={photoPreview} alt="Preview" style={{ maxHeight: 150, borderRadius: 8, border: '1px solid var(--border)' }} />
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <input type="file" accept="image/*" onChange={(e) => {
+                const file = e.target.files[0];
+                setPhoto(file || null);
+                setPhotoPreview(file ? URL.createObjectURL(file) : null);
+              }} />
+              {photoPreview && (
+                <button type="button" className="btn btn-danger btn-sm" onClick={() => { setPhoto(null); setPhotoPreview(null); }}>
+                  <FiTrash2 /> {t('app.delete')}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
