@@ -111,6 +111,7 @@ export default function BillingDetail() {
       } catch {
         setStatement(null);
         setPayments([]);
+        setAddenda('');
       }
     } catch (error) {
       toast.error(error.response?.data?.message || t('app.error'));
@@ -203,16 +204,14 @@ export default function BillingDetail() {
   // Payment handlers
   const savePayment = async () => {
     if (!paymentForm.amount) return toast.error(t('app.required'));
-    if (!statement?._id) {
-      await billingAPI.createStatement(residentId, { month: currentMonth, year: currentYear });
-      await fetchData();
-    }
     try {
-      const stmt = statement?._id
-        ? statement
-        : (await billingAPI.getStatement(residentId, currentMonth, currentYear)).data;
-
-      await billingAPI.createPayment(stmt._id, paymentForm);
+      let stmtId = statement?._id;
+      if (!stmtId) {
+        // Create statement first and use the response directly (avoid stale state)
+        const createRes = await billingAPI.createStatement(residentId, { month: currentMonth, year: currentYear });
+        stmtId = createRes.data._id;
+      }
+      await billingAPI.createPayment(stmtId, paymentForm);
       toast.success(t('billing.paymentCreated'));
       setPaymentModal(false);
       fetchData();
@@ -224,7 +223,7 @@ export default function BillingDetail() {
   const deleteStatement = async (id) => {
     try {
       await billingAPI.deleteStatement(id);
-      toast.success(isEs ? 'Estado eliminado' : 'Statement deleted');
+      toast.success(t('billing.statementDeleted'));
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.message || t('app.error'));
@@ -243,14 +242,11 @@ export default function BillingDetail() {
 
   // Toggle lock
   const toggleLock = async () => {
-    if (!statement?._id) return toast.error(isEs ? 'Primero genere el estado del mes' : 'Generate the statement first');
+    if (!statement?._id) return toast.error(t('billing.generateStatementFirst'));
     try {
       const res = await billingAPI.toggleLock(statement._id);
       setStatement(prev => ({ ...prev, locked: res.data.locked }));
-      toast.success(res.data.locked
-        ? (isEs ? 'Mes cerrado — no se pueden agregar gastos' : 'Month locked')
-        : (isEs ? 'Mes desbloqueado' : 'Month unlocked')
-      );
+      toast.success(res.data.locked ? t('billing.monthLocked') : t('billing.monthUnlocked'));
     } catch (error) {
       toast.error(error.response?.data?.message || t('app.error'));
     }
@@ -278,11 +274,11 @@ export default function BillingDetail() {
 
   // Save addenda
   const saveAddenda = async () => {
-    if (!statement?._id) return toast.error(isEs ? 'Primero genere el estado del mes' : 'Generate the statement first');
+    if (!statement?._id) return toast.error(t('billing.generateStatementFirst'));
     setSavingAddenda(true);
     try {
       await billingAPI.updateStatement(statement._id, { addenda });
-      toast.success(isEs ? 'Mensaje guardado' : 'Message saved');
+      toast.success(t('billing.messageSaved'));
     } catch (error) {
       toast.error(error.response?.data?.message || t('app.error'));
     } finally {
@@ -292,7 +288,7 @@ export default function BillingDetail() {
 
   // Apply variable adjustment
   const applyAdjustment = async () => {
-    if (!adjustmentPct || Number(adjustmentPct) <= 0) return toast.error(isEs ? 'Ingrese un porcentaje válido' : 'Enter a valid percentage');
+    if (!adjustmentPct || Number(adjustmentPct) <= 0) return toast.error(t('billing.enterValidPercentage'));
     setApplyingAdjustment(true);
     try {
       await billingAPI.createStatement(residentId, {
@@ -300,7 +296,7 @@ export default function BillingDetail() {
         applyAdjustment: true,
         adjustmentPercentage: Number(adjustmentPct)
       });
-      toast.success(isEs ? `Ajuste de ${adjustmentPct}% aplicado` : `${adjustmentPct}% adjustment applied`);
+      toast.success(t('billing.adjustmentApplied', { pct: adjustmentPct }));
       setAdjustmentPct('');
       fetchData();
     } catch (error) {
@@ -316,9 +312,9 @@ export default function BillingDetail() {
     try {
       const res = await billingAPI.loadRecurring(residentId, { month: currentMonth, year: currentYear });
       if (res.data.created === 0) {
-        toast.info(isEs ? 'Todos los conceptos ya estaban cargados' : 'All concepts already loaded');
+        toast.info(t('billing.allConceptsLoaded'));
       } else {
-        toast.success(isEs ? `${res.data.created} concepto(s) cargados` : `${res.data.created} concept(s) loaded`);
+        toast.success(t('billing.conceptsLoaded', { count: res.data.created }));
       }
       fetchData();
     } catch (error) {
@@ -355,11 +351,7 @@ export default function BillingDetail() {
     try {
       const res = await billingAPI.statementPDF(residentId, currentMonth, currentYear);
       const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${resident?.firstName}-${resident?.lastName}-${MONTHS[currentMonth - 1]}-${currentYear}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      window.open(url, '_blank');
     } catch {
       toast.error(t('app.error'));
     } finally {
@@ -432,10 +424,10 @@ export default function BillingDetail() {
                   <button
                     className={`btn btn-sm ${isLocked ? 'btn-warning' : 'btn-secondary'}`}
                     onClick={toggleLock}
-                    title={isLocked ? (isEs ? 'Desbloquear mes' : 'Unlock month') : (isEs ? 'Cerrar mes' : 'Lock month')}
+                    title={isLocked ? t('billing.unlockMonth') : t('billing.lockMonth')}
                   >
                     {isLocked ? <FiLock style={{ marginRight: 4 }} /> : <FiUnlock style={{ marginRight: 4 }} />}
-                    {isLocked ? (isEs ? 'Cerrado' : 'Locked') : (isEs ? 'Cerrar mes' : 'Lock')}
+                    {isLocked ? t('billing.locked') : t('billing.lockMonthLabel')}
                   </button>
                 )}
                 <button className="btn btn-primary" onClick={generatePDF} disabled={generatingPDF}>
@@ -452,10 +444,10 @@ export default function BillingDetail() {
               <div className="card-body" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <FiLock style={{ color: '#92400e', fontSize: 18 }} />
                 <span style={{ color: '#92400e', fontWeight: 600 }}>
-                  {isEs ? 'Este mes está cerrado. No se pueden agregar, editar ni eliminar gastos.' : 'This month is locked. Expenses cannot be modified.'}
+                  {t('billing.monthLockedBanner')}
                 </span>
                 <button className="btn btn-warning btn-sm" style={{ marginLeft: 'auto' }} onClick={toggleLock}>
-                  <FiUnlock style={{ marginRight: 4 }} />{isEs ? 'Desbloquear' : 'Unlock'}
+                  <FiUnlock style={{ marginRight: 4 }} />{t('billing.unlockLabel')}
                 </button>
               </div>
             </div>
@@ -473,7 +465,7 @@ export default function BillingDetail() {
                     type="number"
                     className="form-control"
                     style={{ width: 100 }}
-                    placeholder={isEs ? 'Porcentaje %' : 'Percentage %'}
+                    placeholder={t('billing.adjustmentPercentage')}
                     value={adjustmentPct}
                     min={0}
                     onChange={e => setAdjustmentPct(e.target.value)}
@@ -517,7 +509,7 @@ export default function BillingDetail() {
               <div style={{ display: 'flex', gap: 8 }}>
                 {recurringExpenses.length > 0 && (
                   <button className="btn btn-secondary btn-sm" onClick={loadRecurring} disabled={loadingRecurring || isLocked}>
-                    {loadingRecurring ? '...' : (isEs ? '↺ Cargar Recurrentes' : '↺ Load Recurring')}
+                    {loadingRecurring ? '...' : `↺ ${t('billing.loadRecurring')}`}
                   </button>
                 )}
                 <button className="btn btn-primary btn-sm" onClick={openAddExpense} disabled={isLocked}>
@@ -532,14 +524,14 @@ export default function BillingDetail() {
                 <input
                   className="form-control"
                   style={{ paddingLeft: 32 }}
-                  placeholder={isEs ? 'Buscar concepto...' : 'Search concept...'}
+                  placeholder={t('billing.searchConcept')}
                   value={expenseSearch}
                   onChange={e => setExpenseSearch(e.target.value)}
                 />
               </div>
 
               {filteredExpenses.length === 0 ? (
-                <p className="empty-state">{expenseSearch ? (isEs ? 'Sin resultados' : 'No results') : t('billing.noExpenses')}</p>
+                <p className="empty-state">{expenseSearch ? t('billing.noResults') : t('billing.noExpenses')}</p>
               ) : (
                 <>
                   <div className="table-container">
@@ -579,7 +571,7 @@ export default function BillingDetail() {
                         ))}
                         {!expenseSearch && (
                           <tr style={{ background: '#2a2a2a', fontWeight: 700, color: '#fff' }}>
-                            <td colSpan={3} style={{ textAlign: 'right' }}>Subtotal gastos:</td>
+                            <td colSpan={3} style={{ textAlign: 'right' }}>{t('billing.subtotalExpenses')}</td>
                             <td style={{ textAlign: 'right' }}>{formatCurrency(totalExpenses)}</td>
                             <td></td>
                           </tr>
@@ -630,7 +622,7 @@ export default function BillingDetail() {
                           </tr>
                         ))}
                         <tr style={{ background: '#2a2a2a', fontWeight: 700, color: '#fff' }}>
-                          <td colSpan={2} style={{ textAlign: 'right' }}>Total pagado:</td>
+                          <td colSpan={2} style={{ textAlign: 'right' }}>{t('billing.totalPaid')}</td>
                           <td style={{ textAlign: 'right' }}>{formatCurrency(amountPaid)}</td>
                           <td colSpan={2}></td>
                         </tr>
@@ -645,21 +637,21 @@ export default function BillingDetail() {
           {/* Addenda */}
           <div className="card" style={{ marginTop: 16 }}>
             <div className="card-header">
-              <h3 className="card-title">{isEs ? 'Mensaje / Adenda' : 'Message / Addenda'}</h3>
+              <h3 className="card-title">{t('billing.messageAddenda')}</h3>
             </div>
             <div className="card-body">
               <p style={{ fontSize: 13, color: '#888', marginBottom: 8 }}>
-                {isEs ? 'Este mensaje aparecerá en el PDF del estado de cuenta (ej: aviso de aumento).' : 'This message will appear in the PDF statement (e.g. price increase notice).'}
+                {t('billing.messageAddendaDesc')}
               </p>
               <textarea
                 className="form-control"
                 rows={3}
                 value={addenda}
                 onChange={e => setAddenda(e.target.value)}
-                placeholder={isEs ? 'Ej: Se informa aumento del 8% a partir del mes de Abril...' : 'E.g. Price increase of 8% starting April...'}
+                placeholder={t('billing.messageAddendaDesc')}
               />
               <button className="btn btn-primary" style={{ marginTop: 8 }} onClick={saveAddenda} disabled={savingAddenda}>
-                <FiSave style={{ marginRight: 4 }} />{savingAddenda ? '...' : (isEs ? 'Guardar mensaje' : 'Save message')}
+                <FiSave style={{ marginRight: 4 }} />{savingAddenda ? '...' : t('billing.saveMessage')}
               </button>
             </div>
           </div>
@@ -784,15 +776,11 @@ export default function BillingDetail() {
               />
             </div>
 
-            <button className="btn btn-primary" onClick={saveConfigWithRecurring} style={{ marginTop: 8 }}>
-              <FiSave style={{ marginRight: 4 }} />{t('app.save')}
-            </button>
-
             {/* Recurring expenses */}
             <hr style={{ margin: '24px 0', borderColor: '#333' }} />
-            <h4 style={{ marginBottom: 12 }}>{isEs ? 'Conceptos Recurrentes' : 'Recurring Concepts'}</h4>
+            <h4 style={{ marginBottom: 12 }}>{t('billing.recurringConcepts')}</h4>
             <p style={{ fontSize: 13, color: '#888', marginBottom: 12 }}>
-              {isEs ? 'Estos conceptos se cargarán automáticamente cada mes con el botón "Cargar Recurrentes".' : 'These concepts will be loaded each month using the "Load Recurring" button.'}
+              {t('billing.recurringConceptsDesc')}
             </p>
 
             {/* Add new recurring concept */}
@@ -801,7 +789,7 @@ export default function BillingDetail() {
                 <label className="form-label">{t('billing.concept')}</label>
                 <input className="form-control" value={newRecurring.concept}
                   onChange={e => setNewRecurring(p => ({ ...p, concept: e.target.value }))}
-                  placeholder={isEs ? 'Ej: Pañales' : 'E.g. Diapers'} />
+                  placeholder={t('billing.concept')} />
               </div>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label">{t('billing.unitPrice')}</label>
@@ -845,7 +833,7 @@ export default function BillingDetail() {
               </div>
             )}
             <button className="btn btn-success" onClick={saveConfigWithRecurring}>
-              <FiSave style={{ marginRight: 4 }} />{isEs ? 'Guardar Conceptos Recurrentes' : 'Save Recurring Concepts'}
+              <FiSave style={{ marginRight: 4 }} />{t('billing.saveRecurringConcepts')}
             </button>
           </div>
         </div>
@@ -906,7 +894,7 @@ export default function BillingDetail() {
                   style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, objectFit: 'contain', border: '1px solid #444' }}
                 />
                 <p style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
-                  {isEs ? 'Foto actual — selecciona un archivo para reemplazarla' : 'Current photo — select a file to replace it'}
+                  {t('billing.photo')}
                 </p>
               </div>
             )}

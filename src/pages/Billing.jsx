@@ -134,17 +134,13 @@ export default function Billing() {
     }));
   };
 
-  const downloadPDF = async (apiFn, filename, setLoading) => {
+  const openPDF = async (apiFn, setLoading) => {
     setLoading(true);
     try {
       const params = sucursal ? { sucursal } : {};
       const res = await apiFn(month, year, params);
       const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
+      window.open(url, '_blank');
     } catch {
       toast.error(t('app.error'));
     } finally {
@@ -153,27 +149,25 @@ export default function Billing() {
   };
 
   const generateAllPDF = () =>
-    downloadPDF(billingAPI.allStatementsPDF, `estados-cuenta-${MONTHS[month - 1]}-${year}.pdf`, setGeneratingPDF);
+    openPDF(billingAPI.allStatementsPDF, setGeneratingPDF);
 
   const generateSummaryPDF = () =>
-    downloadPDF(billingAPI.summaryPDF, `libro-ventas-${MONTHS[month - 1]}-${year}.pdf`, setGeneratingSummaryPDF);
+    openPDF(billingAPI.summaryPDF, setGeneratingSummaryPDF);
 
   const generateDebtorsPDF = () =>
-    downloadPDF(billingAPI.debtorsPDF, `deudores-${MONTHS[month - 1]}-${year}.pdf`, setGeneratingDebtorsPDF);
+    openPDF(billingAPI.debtorsPDF, setGeneratingDebtorsPDF);
 
   const handleLockMonth = async (lock) => {
-    const action = lock ? (isEs ? 'cerrar' : 'lock') : (isEs ? 'abrir' : 'unlock');
-    if (!window.confirm(isEs
-      ? `¿Confirmar ${action} todos los estados de ${MONTHS[month - 1]} ${year}${sucursal ? ` (${sucursal})` : ''}?`
-      : `Confirm ${action} all statements for ${MONTHS[month - 1]} ${year}?`
-    )) return;
+    const action = lock ? t('billing.lockMonth').toLowerCase() : t('billing.unlockMonth').toLowerCase();
+    if (!window.confirm(t('billing.confirmLock', { action, month: MONTHS[month - 1], year }))) return;
     setLockingMonth(true);
     try {
       const res = await billingAPI.lockMonth({ month, year, locked: lock, ...(sucursal ? { sucursal } : {}) });
-      toast.success(isEs
-        ? `${res.data.updated} estado(s) ${lock ? 'cerrados' : 'abiertos'}`
-        : `${res.data.updated} statement(s) ${lock ? 'locked' : 'unlocked'}`
+      toast.success(lock
+        ? t('billing.statementsLocked', { count: res.data.updated })
+        : t('billing.statementsUnlocked', { count: res.data.updated })
       );
+      fetchData();
     } catch {
       toast.error(t('app.error'));
     } finally {
@@ -229,11 +223,11 @@ export default function Billing() {
       <div className="page-header">
         <h1 className="page-title"><FiDollarSign style={{ marginRight: 8 }} />{t('billing.title')}</h1>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-warning" onClick={() => handleLockMonth(true)} disabled={lockingMonth} title={isEs ? 'Cerrar todos los estados del mes' : 'Lock all statements'}>
-            <FiLock style={{ marginRight: 4 }} />{isEs ? 'Cerrar mes' : 'Lock month'}
+          <button className="btn btn-warning" onClick={() => handleLockMonth(true)} disabled={lockingMonth} title={t('billing.lockMonthTooltip')}>
+            <FiLock style={{ marginRight: 4 }} />{t('billing.lockMonth')}
           </button>
-          <button className="btn btn-secondary" onClick={() => handleLockMonth(false)} disabled={lockingMonth} title={isEs ? 'Abrir todos los estados del mes' : 'Unlock all statements'}>
-            <FiUnlock style={{ marginRight: 4 }} />{isEs ? 'Abrir mes' : 'Unlock month'}
+          <button className="btn btn-secondary" onClick={() => handleLockMonth(false)} disabled={lockingMonth} title={t('billing.unlockMonthTooltip')}>
+            <FiUnlock style={{ marginRight: 4 }} />{t('billing.unlockMonth')}
           </button>
           <button className="btn btn-primary" onClick={generateAllPDF} disabled={generatingPDF}>
             <FiDownload style={{ marginRight: 4 }} />
@@ -320,7 +314,7 @@ export default function Billing() {
                   / {summary?.activeResidentCount || 0}
                 </span>
               </div>
-              <div className="stat-label">{isEs ? 'Estados generados' : 'Statements generated'}</div>
+              <div className="stat-label">{t('billing.statementsGenerated')}</div>
             </div>
           </div>
 
@@ -395,7 +389,7 @@ export default function Billing() {
               <input
                 className="form-control"
                 style={{ paddingLeft: 32 }}
-                placeholder={isEs ? 'Buscar residente...' : 'Search resident...'}
+                placeholder={t('billing.searchResident')}
                 value={debtorSearch}
                 onChange={e => setDebtorSearch(e.target.value)}
               />
@@ -404,7 +398,7 @@ export default function Billing() {
             {filteredDebtors.length === 0 ? (
               <div className="empty-state">
                 <FiDollarSign style={{ fontSize: 40, marginBottom: 8, color: '#28a745' }} />
-                <p>{debtorSearch ? (isEs ? 'Sin resultados' : 'No results') : t('billing.noDebtors')}</p>
+                <p>{debtorSearch ? t('billing.noResults') : t('billing.noDebtors')}</p>
               </div>
             ) : (
               <>
@@ -460,7 +454,7 @@ export default function Billing() {
               <input
                 className="form-control"
                 style={{ paddingLeft: 32 }}
-                placeholder={isEs ? 'Buscar residente...' : 'Search resident...'}
+                placeholder={t('billing.searchResident')}
                 value={configSearch}
                 onChange={e => setConfigSearch(e.target.value)}
               />
@@ -468,7 +462,7 @@ export default function Billing() {
 
             {filteredConfigs.length === 0 ? (
               <div className="empty-state">
-                <p>{configSearch ? (isEs ? 'Sin resultados' : 'No results') : (isEs ? 'No hay configuraciones' : 'No configurations')}</p>
+                <p>{configSearch ? t('billing.noResults') : t('billing.noConfigs')}</p>
               </div>
             ) : (
               <>

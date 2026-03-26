@@ -83,7 +83,11 @@ const Dashboard = () => {
         totalPending: summary.totalPending || 0,
         debtorCount: summary.debtorCount || 0
       });
-      setTopDebtors((debtorsRes.data || []).slice(0, 5));
+      setTopDebtors(
+        (debtorsRes.data || [])
+          .sort((a, b) => (b.balance || 0) - (a.balance || 0))
+          .slice(0, 5)
+      );
 
       setShortages(shortageList);
       setRecentDeliveries(deliveriesRes.data.slice(0, 5));
@@ -135,7 +139,7 @@ const Dashboard = () => {
         <div className="stat-card">
           <div className="stat-icon success"><FiDollarSign /></div>
           <div className="stat-info">
-            <div className="stat-value">{Number(billingStats.totalBilled).toLocaleString('es-UY')}</div>
+            <div className="stat-value">{billingStats.totalBilled ? `$U ${Math.round(Number(billingStats.totalBilled)).toLocaleString()}` : '$U 0'}</div>
             <div className="stat-label">{t('billing.totalBilled')}</div>
           </div>
         </div>
@@ -224,15 +228,15 @@ const Dashboard = () => {
                   </thead>
                   <tbody>
                     {topDebtors.map(d => (
-                      <tr key={d._id || d.residentId}>
+                      <tr key={d._id}>
                         <td>
-                          <Link to={`/billing/${d.residentId || d._id}`} style={{ color: 'inherit' }}>
-                            {d.residentName || `${d.resident?.firstName} ${d.resident?.lastName}`}
+                          <Link to={`/billing/${d.resident?._id}`} style={{ color: 'inherit' }}>
+                            {d.resident ? `${d.resident.firstName} ${d.resident.lastName}` : 'N/A'}
                           </Link>
                         </td>
                         <td>
                           <span className="badge badge-danger">
-                            $U {Number(d.balance).toLocaleString('es-UY')}
+                            $U {Math.round(Number(d.balance)).toLocaleString()}
                           </span>
                         </td>
                       </tr>
