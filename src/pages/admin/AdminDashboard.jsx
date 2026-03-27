@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { superAdminAPI } from '../../services/api';
+import { sid } from '../../utils/session';
 import { FiGrid, FiCheck, FiXCircle, FiClock, FiPlus } from 'react-icons/fi';
 
 const AdminDashboard = () => {
@@ -24,7 +25,7 @@ const AdminDashboard = () => {
     <div>
       <div className="page-header">
         <h1>{t('admin.dashboard', 'Super Admin Dashboard')}</h1>
-        <Link to="/admin/institutions/new" className="btn btn-primary"><FiPlus /> {t('admin.addInstitution', 'Add Institution')}</Link>
+        <Link to={sid("/admin/institutions/new")} className="btn btn-primary"><FiPlus /> {t('admin.addInstitution', 'Add Institution')}</Link>
       </div>
 
       <div className="stats-grid">
@@ -79,7 +80,7 @@ const AdminDashboard = () => {
                   <tbody>
                     {recentInstitutions.map(inst => (
                       <tr key={inst._id}>
-                        <td><Link to={`/admin/institutions/${inst._id}`} style={{ color: 'inherit', textDecoration: 'none' }}>{inst.name}</Link></td>
+                        <td><Link to={sid(`/admin/institutions/${inst._id}`)} style={{ color: 'inherit', textDecoration: 'none' }}>{inst.name}</Link></td>
                         <td><span className={`badge ${inst.subscriptionStatus === 'active' ? 'badge-success' : inst.subscriptionStatus === 'expired' ? 'badge-warning' : 'badge-danger'}`}>{inst.subscriptionStatus}</span></td>
                         <td>{new Date(inst.createdAt).toLocaleDateString()}</td>
                       </tr>
@@ -110,7 +111,7 @@ const AdminDashboard = () => {
                   <tbody>
                     {expiringInstitutions.map(inst => (
                       <tr key={inst._id}>
-                        <td><Link to={`/admin/institutions/${inst._id}`} style={{ color: 'inherit', textDecoration: 'none' }}>{inst.name}</Link></td>
+                        <td><Link to={sid(`/admin/institutions/${inst._id}`)} style={{ color: 'inherit', textDecoration: 'none' }}>{inst.name}</Link></td>
                         <td>{new Date(inst.subscriptionEndDate).toLocaleDateString()}</td>
                       </tr>
                     ))}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { deliveriesAPI, reportsAPI, resolveFileUrl } from '../services/api';
+import { sid } from '../utils/session';
 import { toast } from 'react-toastify';
 import { FiArrowLeft, FiFileText, FiImage, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import SortableHeader from '../components/common/SortableHeader';
@@ -37,7 +38,7 @@ const DeliveryDetail = () => {
     try {
       await deliveriesAPI.delete(id);
       toast.success(t('deliveries.deleted'));
-      navigate('/deliveries');
+      navigate(sid('/deliveries'));
     } catch (error) {
       toast.error(error.response?.data?.message || t('app.error'));
     }
@@ -50,12 +51,12 @@ const DeliveryDetail = () => {
     <div>
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Link to="/deliveries" className="btn btn-secondary btn-sm"><FiArrowLeft /></Link>
+          <Link to={sid("/deliveries")} className="btn btn-secondary btn-sm"><FiArrowLeft /></Link>
           <h1>{t('deliveries.deliveryDetails')}</h1>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-primary" onClick={generatePDF}><FiFileText /> {t('deliveries.generatePDF')}</button>
-          <Link to={`/deliveries/${id}/edit`} className="btn btn-secondary"><FiEdit2 /> {t('app.edit')}</Link>
+          <Link to={sid(`/deliveries/${id}/edit`)} className="btn btn-secondary"><FiEdit2 /> {t('app.edit')}</Link>
           <button className="btn btn-danger" onClick={handleDelete}><FiTrash2 /> {t('app.delete')}</button>
         </div>
       </div>

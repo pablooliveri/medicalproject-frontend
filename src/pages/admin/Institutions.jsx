@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { superAdminAPI } from '../../services/api';
+import { sid } from '../../utils/session';
 import { FiPlus, FiSearch } from 'react-icons/fi';
 
 const Institutions = () => {
@@ -35,7 +36,7 @@ const Institutions = () => {
     <div>
       <div className="page-header">
         <h1>{t('admin.institutions', 'Institutions')}</h1>
-        <Link to="/admin/institutions/new" className="btn btn-primary"><FiPlus /> {t('admin.addInstitution', 'Add Institution')}</Link>
+        <Link to={sid("/admin/institutions/new")} className="btn btn-primary"><FiPlus /> {t('admin.addInstitution', 'Add Institution')}</Link>
       </div>
 
       <div className="card">
@@ -80,7 +81,7 @@ const Institutions = () => {
                   {institutions.map(inst => (
                     <tr key={inst._id}>
                       <td>
-                        <Link to={`/admin/institutions/${inst._id}`} style={{ fontWeight: 500, color: 'inherit', textDecoration: 'none' }}>
+                        <Link to={sid(`/admin/institutions/${inst._id}`)} style={{ fontWeight: 500, color: 'inherit', textDecoration: 'none' }}>
                           {inst.name}
                         </Link>
                       </td>

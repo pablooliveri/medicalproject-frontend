@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { sid } from '../utils/session';
 import { toast } from 'react-toastify';
 import {
   FiArrowLeft, FiDollarSign, FiPlus, FiEdit2, FiTrash2,
@@ -379,7 +380,7 @@ export default function BillingDetail() {
       {/* Header */}
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button className="btn btn-secondary" onClick={() => navigate('/billing')}>
+          <button className="btn btn-secondary" onClick={() => navigate(sid('/billing'))}>
             <FiArrowLeft />
           </button>
           <div>

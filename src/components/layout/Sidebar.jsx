@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FiHome, FiUsers, FiPackage, FiTruck, FiBarChart2, FiFileText, FiDollarSign, FiSettings } from 'react-icons/fi';
+import { sid } from '../../utils/session';
 
 const Sidebar = () => {
   const { t } = useTranslation();
@@ -29,7 +30,7 @@ const Sidebar = () => {
         {navItems.map((item) => (
           <NavLink
             key={item.path}
-            to={item.path}
+            to={sid(item.path)}
             end={item.end}
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
           >

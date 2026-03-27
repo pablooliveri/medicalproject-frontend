@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import SessionGuard from './components/SessionGuard';
+import { getSessionId } from './utils/session';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './i18n';
@@ -42,14 +44,21 @@ const SuperAdminRoute = ({ children }) => {
   return children;
 };
 
+const AuthRedirect = () => {
+  const { isSuperAdmin } = useAuth();
+  const sid = getSessionId();
+  const target = isSuperAdmin ? '/admin' : '/';
+  return <Navigate to={sid ? `${target}?sid=${sid}` : target} />;
+};
+
 const AppRoutes = () => {
-  const { isAuthenticated, isSuperAdmin } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   return (
     <Routes>
       <Route path="/login" element={
         isAuthenticated
-          ? <Navigate to={isSuperAdmin ? '/admin' : '/'} />
+          ? <AuthRedirect />
           : <Login />
       } />
       <Route path="/blocked" element={<Blocked />} />
@@ -163,7 +172,9 @@ function App() {
     <Router>
       <AuthProvider>
         <NotificationProvider>
-          <AppRoutes />
+          <SessionGuard>
+            <AppRoutes />
+          </SessionGuard>
           <ToastContainer position="top-right" autoClose={3000} />
         </NotificationProvider>
       </AuthProvider>

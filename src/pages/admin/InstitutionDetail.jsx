@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { superAdminAPI } from '../../services/api';
 import { toast } from 'react-toastify';
+import { sid } from '../../utils/session';
 import { FiArrowLeft, FiSave, FiTrash2 } from 'react-icons/fi';
 
 const InstitutionDetail = () => {
@@ -79,7 +80,7 @@ const InstitutionDetail = () => {
     try {
       await superAdminAPI.deleteInstitution(id);
       toast.success(t('admin.deleted', 'Institution deleted'));
-      navigate('/admin/institutions');
+      navigate(sid('/admin/institutions'));
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error');
     }
@@ -92,7 +93,7 @@ const InstitutionDetail = () => {
     <div>
       <div className="page-header">
         <h1>{institution.settings?.companyName || institution.name}</h1>
-        <button className="btn btn-secondary" onClick={() => navigate('/admin/institutions')}>
+        <button className="btn btn-secondary" onClick={() => navigate(sid('/admin/institutions'))}>
           <FiArrowLeft /> {t('app.back', 'Back')}
         </button>
       </div>

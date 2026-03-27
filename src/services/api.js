@@ -31,6 +31,7 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      localStorage.removeItem('sessionId');
       window.location.href = '/login';
     }
     if (error.response && error.response.status === 403 && !isAuthEndpoint) {
@@ -38,6 +39,7 @@ api.interceptors.response.use(
       if (code === 'INSTITUTION_BLOCKED' || code === 'SUBSCRIPTION_EXPIRED') {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('sessionId');
         window.location.href = '/login';
       }
     }

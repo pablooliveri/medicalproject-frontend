@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { superAdminAPI } from '../../services/api';
+import { sid } from '../../utils/session';
 import { toast } from 'react-toastify';
 import { FiSave, FiArrowLeft, FiCopy } from 'react-icons/fi';
 
@@ -73,7 +74,7 @@ const AddInstitution = () => {
               <button className="btn btn-primary" onClick={copyCredentials}>
                 <FiCopy /> {t('admin.copyCredentials', 'Copy')}
               </button>
-              <button className="btn btn-secondary" onClick={() => navigate('/admin/institutions')}>
+              <button className="btn btn-secondary" onClick={() => navigate(sid('/admin/institutions'))}>
                 {t('admin.goToInstitutions', 'Go to Institutions')}
               </button>
             </div>
@@ -87,7 +88,7 @@ const AddInstitution = () => {
     <div>
       <div className="page-header">
         <h1>{t('admin.addInstitution', 'Add Institution')}</h1>
-        <button className="btn btn-secondary" onClick={() => navigate('/admin/institutions')}>
+        <button className="btn btn-secondary" onClick={() => navigate(sid('/admin/institutions'))}>
           <FiArrowLeft /> {t('app.back', 'Back')}
         </button>
       </div>

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '../services/api';
+import { generateSessionId, setSessionId, clearSession } from '../utils/session';
 
 const AuthContext = createContext(null);
 
@@ -22,13 +23,16 @@ export const AuthProvider = ({ children }) => {
     const { data } = await authAPI.login({ username, password });
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
+    const sessionId = generateSessionId();
+    setSessionId(sessionId);
     setUser(data.user);
-    return data;
+    return { ...data, sessionId };
   };
 
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    clearSession();
     setUser(null);
   };
 

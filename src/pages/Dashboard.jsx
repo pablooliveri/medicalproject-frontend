@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { residentsAPI, medicationsAPI, residentMedicationsAPI, deliveriesAPI, settingsAPI } from '../services/api';
+import { sid } from '../utils/session';
 import { FiUsers, FiPackage, FiAlertTriangle, FiAlertCircle, FiPlus, FiFileText, FiTruck } from 'react-icons/fi';
 import Pagination from '../components/common/Pagination';
 import SortableHeader from '../components/common/SortableHeader';
@@ -125,10 +126,10 @@ const Dashboard = () => {
           <h3 className="card-title">{t('dashboard.quickActions')}</h3>
         </div>
         <div className="card-body" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <Link to="/residents" className="btn btn-primary"><FiPlus /> {t('dashboard.addResident')}</Link>
-          <Link to="/medications" className="btn btn-primary"><FiPlus /> {t('dashboard.addMedication')}</Link>
-          <Link to="/deliveries/new" className="btn btn-success"><FiTruck /> {t('dashboard.newDelivery')}</Link>
-          <Link to="/reports" className="btn btn-secondary"><FiFileText /> {t('dashboard.viewReports')}</Link>
+          <Link to={sid("/residents")} className="btn btn-primary"><FiPlus /> {t('dashboard.addResident')}</Link>
+          <Link to={sid("/medications")} className="btn btn-primary"><FiPlus /> {t('dashboard.addMedication')}</Link>
+          <Link to={sid("/deliveries/new")} className="btn btn-success"><FiTruck /> {t('dashboard.newDelivery')}</Link>
+          <Link to={sid("/reports")} className="btn btn-secondary"><FiFileText /> {t('dashboard.viewReports')}</Link>
         </div>
       </div>
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { residentsAPI, settingsAPI } from '../services/api';
+import { sid } from '../utils/session';
 import { toast } from 'react-toastify';
 import Modal from '../components/common/Modal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
@@ -206,7 +207,7 @@ const Residents = () => {
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: 4 }}>
-                          <button className="btn btn-sm btn-secondary" onClick={() => navigate(`/residents/${r._id}`)}>
+                          <button className="btn btn-sm btn-secondary" onClick={() => navigate(sid(`/residents/${r._id}`))}>
                             <FiEye />
                           </button>
                           <button className="btn btn-sm btn-secondary" onClick={() => openEdit(r)}>

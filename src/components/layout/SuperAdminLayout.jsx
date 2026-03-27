@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { FiHome, FiGrid, FiSettings, FiLogOut } from 'react-icons/fi';
+import { sid } from '../../utils/session';
 
 const SuperAdminLayout = ({ children }) => {
   const { t } = useTranslation();
@@ -27,7 +28,7 @@ const SuperAdminLayout = ({ children }) => {
           {navItems.map((item) => (
             <NavLink
               key={item.path}
-              to={item.path}
+              to={sid(item.path)}
               end={item.end}
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             >

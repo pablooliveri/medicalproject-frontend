@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { residentsAPI, residentMedicationsAPI, medicationsAPI, reportsAPI, medicationHistoryAPI, billingAPI } from '../services/api';
+import { sid } from '../utils/session';
 import { toast } from 'react-toastify';
 import Modal from '../components/common/Modal';
 import { FiArrowLeft, FiPlus, FiEdit, FiXCircle, FiCheckCircle, FiFileText, FiPackage, FiClock, FiChevronLeft, FiChevronRight, FiCalendar, FiDollarSign } from 'react-icons/fi';
@@ -288,7 +289,7 @@ const ResidentDetail = () => {
     <div>
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Link to="/residents" className="btn btn-secondary btn-sm"><FiArrowLeft /></Link>
+          <Link to={sid("/residents")} className="btn btn-secondary btn-sm"><FiArrowLeft /></Link>
           <h1>{resident.firstName} {resident.lastName}</h1>
         </div>
         <div className="page-actions">
@@ -615,7 +616,7 @@ const ResidentDetail = () => {
         <div className="card">
           <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 className="card-title"><FiDollarSign style={{ marginRight: 6 }} />{isEs ? 'Facturación' : 'Billing'}</h3>
-            <button className="btn btn-primary" onClick={() => navigate(`/billing/${id}`)}>
+            <button className="btn btn-primary" onClick={() => navigate(sid(`/billing/${id}`))}>
               {isEs ? 'Ver detalle completo' : 'View full detail'}
             </button>
           </div>

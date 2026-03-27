@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { deliveriesAPI, residentsAPI, reportsAPI } from '../services/api';
+import { sid } from '../utils/session';
 import { toast } from 'react-toastify';
 import { FiPlus, FiEye, FiFileText, FiTruck, FiSearch, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import Pagination from '../components/common/Pagination';
@@ -63,7 +64,7 @@ const Deliveries = () => {
     <div>
       <div className="page-header">
         <h1>{t('deliveries.title')}</h1>
-        <Link to="/deliveries/new" className="btn btn-primary"><FiPlus /> {t('deliveries.newDelivery')}</Link>
+        <Link to={sid("/deliveries/new")} className="btn btn-primary"><FiPlus /> {t('deliveries.newDelivery')}</Link>
       </div>
 
       <div style={{ marginBottom: 24 }}>
@@ -100,9 +101,9 @@ const Deliveries = () => {
                       <td>{d.items?.length || 0}</td>
                       <td>
                         <div style={{ display: 'flex', gap: 4 }}>
-                          <button className="btn btn-sm btn-secondary" onClick={() => navigate(`/deliveries/${d._id}`)} title={t('app.view')}><FiEye /></button>
+                          <button className="btn btn-sm btn-secondary" onClick={() => navigate(sid(`/deliveries/${d._id}`))} title={t('app.view')}><FiEye /></button>
                           <button className="btn btn-sm btn-secondary" onClick={() => generatePDF(d._id)} title={t('deliveries.generatePDF')}><FiFileText /></button>
-                          <button className="btn btn-sm btn-secondary" onClick={() => navigate(`/deliveries/${d._id}/edit`)} title={t('app.edit')}><FiEdit2 /></button>
+                          <button className="btn btn-sm btn-secondary" onClick={() => navigate(sid(`/deliveries/${d._id}/edit`))} title={t('app.edit')}><FiEdit2 /></button>
                           <button className="btn btn-sm btn-danger" onClick={() => handleDelete(d._id)} title={t('app.delete')}><FiTrash2 /></button>
                         </div>
                       </td>

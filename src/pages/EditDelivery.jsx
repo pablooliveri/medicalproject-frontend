@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { residentsAPI, residentMedicationsAPI, deliveriesAPI, resolveFileUrl } from '../services/api';
+import { sid } from '../utils/session';
 import { toast } from 'react-toastify';
 import { FiPlus, FiTrash2, FiUpload, FiSave, FiArrowLeft, FiImage } from 'react-icons/fi';
 
@@ -51,7 +52,7 @@ const EditDelivery = () => {
       setItems(mappedItems.length > 0 ? mappedItems : [{ residentMedication: '', medication: '', quantity: '' }]);
     } catch (error) {
       toast.error(t('app.error'));
-      navigate('/deliveries');
+      navigate(sid('/deliveries'));
     } finally {
       setPageLoading(false);
     }
@@ -103,7 +104,7 @@ const EditDelivery = () => {
 
       await deliveriesAPI.update(id, formData);
       toast.success(t('deliveries.updated'));
-      navigate(`/deliveries/${id}`);
+      navigate(sid(`/deliveries/${id}`));
     } catch (error) {
       toast.error(error.response?.data?.message || t('app.error'));
     } finally {
@@ -117,7 +118,7 @@ const EditDelivery = () => {
     <div>
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Link to={`/deliveries/${id}`} className="btn btn-secondary btn-sm"><FiArrowLeft /></Link>
+          <Link to={sid(`/deliveries/${id}`)} className="btn btn-secondary btn-sm"><FiArrowLeft /></Link>
           <h1>{t('deliveries.editDelivery')}</h1>
         </div>
       </div>

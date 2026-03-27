@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { sid } from '../utils/session';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import {
@@ -347,7 +348,7 @@ export default function Billing() {
                     </thead>
                     <tbody>
                       {debtors.slice(0, 5).map(s => (
-                        <tr key={s._id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/billing/${s.resident._id}`)}>
+                        <tr key={s._id} style={{ cursor: 'pointer' }} onClick={() => navigate(sid(`/billing/${s.resident._id}`))}>
                           <td>{s.resident.firstName} {s.resident.lastName}</td>
                           {branches.length > 0 && <td>{s.resident.sucursal}</td>}
                           <td style={{ textAlign: 'right' }}>{formatCurrency(s.totalAmount)}</td>
@@ -425,7 +426,7 @@ export default function Billing() {
                           <td style={{ textAlign: 'right', color: '#dc3545', fontWeight: 600 }}>{formatCurrency(s.balance)}</td>
                           <td><span className={`badge ${statusClass[s.status]}`}>{statusLabel[s.status]}</span></td>
                           <td>
-                            <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/billing/${s.resident._id}`)}>
+                            <button className="btn btn-secondary btn-sm" onClick={() => navigate(sid(`/billing/${s.resident._id}`))}>
                               <FiEye />
                             </button>
                           </td>
@@ -483,7 +484,7 @@ export default function Billing() {
                         <tr key={entry.resident._id}>
                           <td
                             style={{ cursor: 'pointer', color: '#2e7d32', fontWeight: 500 }}
-                            onClick={() => navigate(`/billing/${entry.resident._id}`)}
+                            onClick={() => navigate(sid(`/billing/${entry.resident._id}`))}
                           >
                             {entry.resident.firstName} {entry.resident.lastName}
                           </td>
@@ -498,7 +499,7 @@ export default function Billing() {
                           <td>
                             <div style={{ display: 'flex', gap: 6 }}>
                               <button className="btn btn-secondary btn-sm" onClick={() => openConfigModal(entry)}><FiEdit2 /></button>
-                              <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/billing/${entry.resident._id}`)}><FiEye /></button>
+                              <button className="btn btn-secondary btn-sm" onClick={() => navigate(sid(`/billing/${entry.resident._id}`))}><FiEye /></button>
                             </div>
                           </td>
                         </tr>

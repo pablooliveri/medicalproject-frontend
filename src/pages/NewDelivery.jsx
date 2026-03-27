@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
 import { residentsAPI, residentMedicationsAPI, deliveriesAPI } from '../services/api';
+import { sid } from '../utils/session';
 import { toast } from 'react-toastify';
 import { FiPlus, FiTrash2, FiUpload, FiSave, FiArrowLeft, FiImage } from 'react-icons/fi';
 
@@ -75,7 +76,7 @@ const NewDelivery = () => {
 
       await deliveriesAPI.create(formData);
       toast.success(t('deliveries.created'));
-      navigate('/deliveries');
+      navigate(sid('/deliveries'));
     } catch (error) {
       toast.error(error.response?.data?.message || t('app.error'));
     } finally {
@@ -87,7 +88,7 @@ const NewDelivery = () => {
     <div>
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Link to="/deliveries" className="btn btn-secondary btn-sm"><FiArrowLeft /></Link>
+          <Link to={sid("/deliveries")} className="btn btn-secondary btn-sm"><FiArrowLeft /></Link>
           <h1>{t('deliveries.newDelivery')}</h1>
         </div>
       </div>

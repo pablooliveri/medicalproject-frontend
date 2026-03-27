@@ -23,10 +23,11 @@ const Login = () => {
     setLoading(true);
     try {
       const data = await login(username, password);
+      const sidParam = `?sid=${data.sessionId}`;
       if (data.user.role === 'superadmin') {
-        navigate('/admin');
+        navigate(`/admin${sidParam}`);
       } else {
-        navigate('/');
+        navigate(`/${sidParam}`);
       }
     } catch (error) {
       const code = error.response?.data?.code;
