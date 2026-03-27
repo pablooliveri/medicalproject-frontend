@@ -31,10 +31,10 @@ const Login = () => {
     } catch (error) {
       const code = error.response?.data?.code;
       if (code === 'INSTITUTION_BLOCKED' || code === 'SUBSCRIPTION_EXPIRED') {
-        // Interceptor will redirect to /blocked — no toast needed
-        return;
+        toast.error(error.response.data.message);
+      } else {
+        toast.error(t('auth.loginError'));
       }
-      toast.error(t('auth.loginError'));
     } finally {
       setLoading(false);
     }
