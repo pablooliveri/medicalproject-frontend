@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { superAdminAPI } from '../../services/api';
 import { toast } from 'react-toastify';
-import { FiArrowLeft, FiSave, FiTrash2, FiKey } from 'react-icons/fi';
+import { FiArrowLeft, FiSave, FiTrash2 } from 'react-icons/fi';
 
 const InstitutionDetail = () => {
   const { t } = useTranslation();
@@ -12,8 +12,8 @@ const InstitutionDetail = () => {
   const [institution, setInstitution] = useState(null);
   const [subForm, setSubForm] = useState({});
   const [loading, setLoading] = useState(true);
-  const [newPassword, setNewPassword] = useState('');
   const [editUsernames, setEditUsernames] = useState({});
+  const [editPasswords, setEditPasswords] = useState({});
 
   const fetchInstitution = async () => {
     try {
@@ -55,26 +55,19 @@ const InstitutionDetail = () => {
     }
   };
 
-  const handleResetPassword = async (userId) => {
-    if (!newPassword.trim()) {
-      toast.error(t('admin.enterPassword', 'Enter a new password'));
-      return;
-    }
-    try {
-      await superAdminAPI.resetPassword(id, { userId, newPassword });
-      setNewPassword('');
-      toast.success(t('admin.passwordReset', 'Password reset successfully'));
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Error');
-    }
-  };
-
-  const handleUpdateUsername = async (userId, originalUsername) => {
+  const handleUpdateUser = async (userId, originalUsername) => {
     const newUsername = editUsernames[userId];
-    if (!newUsername || newUsername.trim() === '' || newUsername === originalUsername) return;
+    const newPassword = editPasswords[userId];
+    const usernameChanged = newUsername && newUsername.trim() !== '' && newUsername !== originalUsername;
+    const passwordEntered = newPassword && newPassword.trim() !== '';
+    if (!usernameChanged && !passwordEntered) return;
     try {
-      await superAdminAPI.updateUser(id, { userId, username: newUsername.trim() });
-      toast.success(t('admin.usernameUpdated', 'Username updated'));
+      const payload = { userId };
+      if (usernameChanged) payload.username = newUsername.trim();
+      if (passwordEntered) payload.newPassword = newPassword.trim();
+      await superAdminAPI.updateUser(id, payload);
+      setEditPasswords(prev => ({ ...prev, [userId]: '' }));
+      toast.success(t('admin.userUpdated', 'User updated successfully'));
       fetchInstitution();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error');
@@ -189,31 +182,33 @@ const InstitutionDetail = () => {
           <div className="card">
             <div className="card-header"><h3 className="card-title">{t('admin.users', 'Users')}</h3></div>
             <div className="card-body">
-              {institution.users?.map(user => (
-                <div key={user._id} style={{ marginBottom: 12, padding: 12, background: 'var(--bg-primary)', borderRadius: 8 }}>
-                  <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 8 }}>{user.role} - {user.name}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={editUsernames[user._id] !== undefined ? editUsernames[user._id] : user.username}
-                      onChange={e => setEditUsernames({ ...editUsernames, [user._id]: e.target.value })}
-                      style={{ flex: 1, fontSize: 13 }}
-                    />
-                    {editUsernames[user._id] !== undefined && editUsernames[user._id] !== user.username && (
-                      <button className="btn btn-primary" onClick={() => handleUpdateUsername(user._id, user.username)} style={{ padding: '6px 12px', fontSize: 13 }}>
-                        <FiSave />
+              {institution.users?.map(user => {
+                const usernameChanged = editUsernames[user._id] !== undefined && editUsernames[user._id] !== user.username;
+                const passwordEntered = editPasswords[user._id] && editPasswords[user._id].trim() !== '';
+                const showSave = usernameChanged || passwordEntered;
+                return (
+                  <div key={user._id} style={{ marginBottom: 12, padding: 12, background: 'var(--bg-primary)', borderRadius: 8 }}>
+                    <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 8 }}>{user.role} - {user.name}</div>
+                    <div style={{ marginBottom: 8 }}>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={editUsernames[user._id] !== undefined ? editUsernames[user._id] : user.username}
+                        onChange={e => setEditUsernames({ ...editUsernames, [user._id]: e.target.value })}
+                        style={{ fontSize: 13 }}
+                      />
+                    </div>
+                    <div style={{ marginBottom: showSave ? 8 : 0 }}>
+                      <input type="text" className="form-control" placeholder={t('admin.newPassword', 'New password')} value={editPasswords[user._id] || ''} onChange={e => setEditPasswords({ ...editPasswords, [user._id]: e.target.value })} style={{ fontSize: 13 }} />
+                    </div>
+                    {showSave && (
+                      <button className="btn btn-primary" onClick={() => handleUpdateUser(user._id, user.username)} style={{ padding: '6px 12px', fontSize: 13 }}>
+                        <FiSave /> {t('admin.save', 'Save')}
                       </button>
                     )}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <input type="text" className="form-control" placeholder={t('admin.newPassword', 'New password')} value={newPassword} onChange={e => setNewPassword(e.target.value)} style={{ flex: 1, fontSize: 13 }} />
-                    <button className="btn btn-secondary" onClick={() => handleResetPassword(user._id)} style={{ padding: '6px 12px', fontSize: 13 }}>
-                      <FiKey />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
