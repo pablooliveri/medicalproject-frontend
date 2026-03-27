@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { residentsAPI, medicationsAPI, residentMedicationsAPI, deliveriesAPI, settingsAPI, billingAPI } from '../services/api';
-import { FiUsers, FiPackage, FiAlertTriangle, FiAlertCircle, FiPlus, FiFileText, FiTruck, FiDollarSign } from 'react-icons/fi';
+import { residentsAPI, medicationsAPI, residentMedicationsAPI, deliveriesAPI, settingsAPI } from '../services/api';
+import { FiUsers, FiPackage, FiAlertTriangle, FiAlertCircle, FiPlus, FiFileText, FiTruck } from 'react-icons/fi';
 import Pagination from '../components/common/Pagination';
 import SortableHeader from '../components/common/SortableHeader';
 import usePagination from '../hooks/usePagination';
@@ -11,14 +11,9 @@ import useSortableTable from '../hooks/useSortableTable';
 const Dashboard = () => {
   const { t } = useTranslation();
   const [stats, setStats] = useState({ residents: 0, activeResidents: 0, medications: 0, lowStock: 0, outOfStock: 0 });
-  const [billingStats, setBillingStats] = useState({ totalBilled: 0, totalPending: 0, debtorCount: 0 });
-  const [topDebtors, setTopDebtors] = useState([]);
   const [shortages, setShortages] = useState([]);
   const [recentDeliveries, setRecentDeliveries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const now = new Date();
-  const currentMonth = now.getMonth() + 1;
-  const currentYear = now.getFullYear();
   const { sortedData: sortedShortages, sortConfig: shortagesSortConfig, requestSort: shortagesRequestSort } = useSortableTable(shortages);
   const { sortedData: sortedDeliveries, sortConfig: deliveriesSortConfig, requestSort: deliveriesRequestSort } = useSortableTable(recentDeliveries);
   const { paginatedData: paginatedShortages, currentPage: shortagesPage, rowsPerPage: shortagesRowsPerPage, totalItems: shortagesTotal, handlePageChange: shortagesPageChange, handleRowsPerPageChange: shortagesRowsChange } = usePagination(sortedShortages);
@@ -30,14 +25,12 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     try {
-      const [residentsRes, medsRes, resMedsRes, deliveriesRes, settingsRes, billingSummaryRes, debtorsRes] = await Promise.all([
+      const [residentsRes, medsRes, resMedsRes, deliveriesRes, settingsRes] = await Promise.all([
         residentsAPI.getAll(),
         medicationsAPI.getAll(),
         residentMedicationsAPI.getAll({ isActive: true }),
         deliveriesAPI.getAll(),
-        settingsAPI.get(),
-        billingAPI.getSummary({ month: currentMonth, year: currentYear }).catch(() => ({ data: {} })),
-        billingAPI.getDebtors({ month: currentMonth, year: currentYear }).catch(() => ({ data: [] }))
+        settingsAPI.get()
       ]);
 
       const threshold = settingsRes.data?.lowStockThresholdDays ?? 5;
@@ -76,18 +69,6 @@ const Dashboard = () => {
         lowStock: lowStockCount,
         outOfStock: outOfStockCount
       });
-
-      const summary = billingSummaryRes.data || {};
-      setBillingStats({
-        totalBilled: summary.totalBilled || 0,
-        totalPending: summary.totalPending || 0,
-        debtorCount: summary.debtorCount || 0
-      });
-      setTopDebtors(
-        (debtorsRes.data || [])
-          .sort((a, b) => (b.balance || 0) - (a.balance || 0))
-          .slice(0, 5)
-      );
 
       setShortages(shortageList);
       setRecentDeliveries(deliveriesRes.data.slice(0, 5));
@@ -134,20 +115,6 @@ const Dashboard = () => {
           <div className="stat-info">
             <div className="stat-value">{stats.outOfStock}</div>
             <div className="stat-label">{t('dashboard.outOfStock')}</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon success"><FiDollarSign /></div>
-          <div className="stat-info">
-            <div className="stat-value">{billingStats.totalBilled ? `$U ${Math.round(Number(billingStats.totalBilled)).toLocaleString()}` : '$U 0'}</div>
-            <div className="stat-label">{t('billing.totalBilled')}</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon danger"><FiDollarSign /></div>
-          <div className="stat-info">
-            <div className="stat-value">{billingStats.debtorCount}</div>
-            <div className="stat-label">{t('billing.debtorCount')}</div>
           </div>
         </div>
       </div>
@@ -201,48 +168,6 @@ const Dashboard = () => {
                   </tbody>
                 </table>
                 <Pagination totalItems={shortagesTotal} currentPage={shortagesPage} rowsPerPage={shortagesRowsPerPage} onPageChange={shortagesPageChange} onRowsPerPageChange={shortagesRowsChange} />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Debtors Mini-Table */}
-        <div className="card">
-          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 className="card-title"><FiDollarSign style={{ marginRight: 6 }} />{t('billing.debtors')}</h3>
-            <Link to="/billing" className="btn btn-secondary" style={{ fontSize: 12, padding: '4px 10px' }}>{t('billing.viewDetail')}</Link>
-          </div>
-          <div className="card-body">
-            {topDebtors.length === 0 ? (
-              <div className="empty-state" style={{ padding: 20 }}>
-                <p>{t('billing.noDebtors')}</p>
-              </div>
-            ) : (
-              <div className="table-container">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>{t('dashboard.residentName')}</th>
-                      <th>{t('billing.balance')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topDebtors.map(d => (
-                      <tr key={d._id}>
-                        <td>
-                          <Link to={`/billing/${d.resident?._id}`} style={{ color: 'inherit' }}>
-                            {d.resident ? `${d.resident.firstName} ${d.resident.lastName}` : 'N/A'}
-                          </Link>
-                        </td>
-                        <td>
-                          <span className="badge badge-danger">
-                            $U {Math.round(Number(d.balance)).toLocaleString()}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
             )}
           </div>
