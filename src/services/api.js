@@ -33,12 +33,12 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
-    if (error.response && error.response.status === 403 && !isAuthEndpoint && window.location.pathname !== '/blocked') {
+    if (error.response && error.response.status === 403 && !isAuthEndpoint) {
       const code = error.response.data?.code;
       if (code === 'INSTITUTION_BLOCKED' || code === 'SUBSCRIPTION_EXPIRED') {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        window.location.href = '/blocked';
+        window.location.href = '/login';
       }
     }
     return Promise.reject(error);
