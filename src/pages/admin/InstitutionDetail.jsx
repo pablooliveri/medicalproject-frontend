@@ -172,7 +172,7 @@ const InstitutionDetail = () => {
                 </div>
                 <div className="form-group">
                   <label className="form-label">{t('admin.endDate', 'End Date')}</label>
-                  <input type="date" className="form-control" value={subForm.subscriptionEndDate} onChange={e => setSubForm({ ...subForm, subscriptionEndDate: e.target.value })} />
+                  <input type="date" className="form-control" value={subForm.subscriptionEndDate} min={new Date().toISOString().split('T')[0]} onChange={e => setSubForm({ ...subForm, subscriptionEndDate: e.target.value })} />
                 </div>
                 <button type="submit" className="btn btn-primary"><FiSave /> {t('admin.save', 'Save')}</button>
               </form>
