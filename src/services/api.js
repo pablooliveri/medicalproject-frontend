@@ -22,14 +22,22 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 responses
+// Handle 401 responses (skip for login/seed endpoints to let the component handle errors)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    const url = error.config?.url || '';
+    const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/seed');
+    if (error.response && error.response.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
+    }
+    if (error.response && error.response.status === 403 && window.location.pathname !== '/blocked') {
+      const code = error.response.data?.code;
+      if (code === 'INSTITUTION_BLOCKED' || code === 'SUBSCRIPTION_EXPIRED') {
+        window.location.href = '/blocked';
+      }
     }
     return Promise.reject(error);
   }
@@ -177,6 +185,21 @@ export const reportsAPI = {
   deliveryReport: (id) => api.get(`/reports/delivery/${id}`, { responseType: 'blob' }),
   residentReport: (id, params = {}) => api.get(`/reports/resident/${id}`, { responseType: 'blob', params }),
   allResidentsReport: (params = {}) => api.get('/reports/all-residents', { responseType: 'blob', params })
+};
+
+// Super Admin
+export const superAdminAPI = {
+  getDashboard: () => api.get('/superadmin/dashboard'),
+  getInstitutions: (params) => api.get('/superadmin/institutions', { params }),
+  getInstitution: (id) => api.get(`/superadmin/institutions/${id}`),
+  createInstitution: (data) => api.post('/superadmin/institutions', data),
+  updateInstitution: (id, data) => api.put(`/superadmin/institutions/${id}`, data),
+  updateStatus: (id, data) => api.put(`/superadmin/institutions/${id}/status`, data),
+  updateSubscription: (id, data) => api.put(`/superadmin/institutions/${id}/subscription`, data),
+  resetPassword: (id, data) => api.put(`/superadmin/institutions/${id}/reset-password`, data),
+  updateUser: (id, data) => api.put(`/superadmin/institutions/${id}/update-user`, data),
+  deleteInstitution: (id) => api.delete(`/superadmin/institutions/${id}`),
+  updateAccount: (data) => api.put('/superadmin/account', data)
 };
 
 export default api;

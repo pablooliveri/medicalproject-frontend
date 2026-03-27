@@ -5,7 +5,9 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './i18n';
 import Layout from './components/layout/Layout';
+import SuperAdminLayout from './components/layout/SuperAdminLayout';
 import Login from './pages/Login';
+import Blocked from './pages/Blocked';
 import Dashboard from './pages/Dashboard';
 import Residents from './pages/Residents';
 import ResidentDetail from './pages/ResidentDetail';
@@ -19,6 +21,11 @@ import Reports from './pages/Reports';
 import Billing from './pages/Billing';
 import BillingDetail from './pages/BillingDetail';
 import Settings from './pages/Settings';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import Institutions from './pages/admin/Institutions';
+import AddInstitution from './pages/admin/AddInstitution';
+import InstitutionDetail from './pages/admin/InstitutionDetail';
+import SuperAdminSettings from './pages/admin/SuperAdminSettings';
 import './App.css';
 
 const ProtectedRoute = ({ children }) => {
@@ -27,12 +34,34 @@ const ProtectedRoute = ({ children }) => {
   return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
+const SuperAdminRoute = ({ children }) => {
+  const { isAuthenticated, isSuperAdmin, loading } = useAuth();
+  if (loading) return <div className="loading-screen">Loading...</div>;
+  if (!isAuthenticated) return <Navigate to="/login" />;
+  if (!isSuperAdmin) return <Navigate to="/" />;
+  return children;
+};
+
 const AppRoutes = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isSuperAdmin } = useAuth();
 
   return (
     <Routes>
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
+      <Route path="/login" element={
+        isAuthenticated
+          ? <Navigate to={isSuperAdmin ? '/admin' : '/'} />
+          : <Login />
+      } />
+      <Route path="/blocked" element={<Blocked />} />
+
+      {/* Super Admin Routes */}
+      <Route path="/admin" element={<SuperAdminRoute><SuperAdminLayout><AdminDashboard /></SuperAdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/institutions" element={<SuperAdminRoute><SuperAdminLayout><Institutions /></SuperAdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/institutions/new" element={<SuperAdminRoute><SuperAdminLayout><AddInstitution /></SuperAdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/institutions/:id" element={<SuperAdminRoute><SuperAdminLayout><InstitutionDetail /></SuperAdminLayout></SuperAdminRoute>} />
+      <Route path="/admin/settings" element={<SuperAdminRoute><SuperAdminLayout><SuperAdminSettings /></SuperAdminLayout></SuperAdminRoute>} />
+
+      {/* Institution Routes */}
       <Route path="/" element={
         <ProtectedRoute>
           <Layout>

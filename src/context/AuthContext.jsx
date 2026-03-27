@@ -32,12 +32,15 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const isSuperAdmin = user?.role === 'superadmin';
+
   const value = {
     user,
     login,
     logout,
     loading,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
+    isSuperAdmin
   };
 
   return (
