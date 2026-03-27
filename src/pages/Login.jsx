@@ -29,6 +29,11 @@ const Login = () => {
         navigate('/');
       }
     } catch (error) {
+      const code = error.response?.data?.code;
+      if (code === 'INSTITUTION_BLOCKED' || code === 'SUBSCRIPTION_EXPIRED') {
+        // Interceptor will redirect to /blocked — no toast needed
+        return;
+      }
       toast.error(t('auth.loginError'));
     } finally {
       setLoading(false);
